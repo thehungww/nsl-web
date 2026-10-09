@@ -65,7 +65,7 @@ async function predict(env,record,photo,data,confidence,fetcher) {
   const form=new FormData(); form.append('file',new Blob([bytes],{type:'image/jpeg'}),'image.jpg');
   for(const [k,v] of Object.entries({conf:confidence,iou:.45,imgsz:640,normalize:'false'})) form.append(k,String(v));
   let result; const started=performance.now();
-  try { result=await fetcher(endpoint(record.endpoint)+'/predict',{method:'POST',headers:{Authorization:'Bearer '+key},body:form,redirect:'error',signal:AbortSignal.timeout(120000)}); }
+  try { result=await fetcher(endpoint(record.endpoint)+'/predict',{method:'POST',headers:{Authorization:'Bearer '+key},body:form,redirect:'manual',signal:AbortSignal.timeout(120000)}); }
   catch { throw new UserError('Không kết nối được máy chủ nhận diện.',502); }
   if(!result.ok) { await result.body?.cancel(); throw new UserError(({401:'API key Ultralytics không hợp lệ.',403:'Deployment từ chối API key.',429:'Máy chủ nhận diện đạt hạn mức.'})[result.status] || 'Máy chủ nhận diện tạm thời lỗi.',502); }
   return parsePrediction(await result.json(),photo,confidence,(performance.now()-started)/1000);

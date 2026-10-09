@@ -6,10 +6,9 @@ const chunkMap = new Map(corpus.chunks.map(c => [c.id,c]));
 const API = 'https://generativelanguage.googleapis.com/v1beta/models/';
 async function google(path, body, key, fetcher) {
   let response;
-  try { response = await fetcher(API + path, { method: 'POST', headers: {'Content-Type':'application/json','x-goog-api-key':key}, body:JSON.stringify(body), signal: AbortSignal.timeout(90000), redirect:'error' }); }
+  try { response = await fetcher(API + path, { method: 'POST', headers: {'Content-Type':'application/json','x-goog-api-key':key}, body:JSON.stringify(body), signal: AbortSignal.timeout(90000), redirect:'manual' }); }
   catch (error) {
-    const message=String(error?.message || '').replaceAll(key,'[redacted]').slice(0,240);
-    console.error('AI transport',path.endsWith(':embedContent')?'embedding':'chat',error?.name || 'Error',message);
+    console.error('AI transport',path.endsWith(':embedContent')?'embedding':'chat',error?.name || 'Error');
     throw new UserError('Không kết nối được chatbot. Thử gửi lại sau.',502);
   }
   if (!response.ok) {

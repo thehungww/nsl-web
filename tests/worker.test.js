@@ -62,7 +62,7 @@ test('expired sessions cannot read old photos, cron schema cascades private data
 test('chat without photos works; image chat uses chosen photo; deleted model and stale threshold rejected',async()=>{
   const calls=[];let scans=0;
   const fetcher=async(url,options)=>{
-    if(url.endsWith('/predict')){scans++;assert.equal(options.redirect,'error');assert.ok(options.headers.Authorization.startsWith('Bearer ul_'));return Response.json(detectionData(scans));}
+    if(url.endsWith('/predict')){scans++;assert.equal(options.redirect,'manual');assert.ok(options.headers.Authorization.startsWith('Bearer ul_'));return Response.json(detectionData(scans));}
     const payload=JSON.parse(options.body);calls.push({url,payload});
     if(url.endsWith(':embedContent'))return Response.json({embedding:{values:Array(768).fill(.1)}});
     return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:'Hướng dẫn chăm sóc da [1].'}]}}]});
@@ -78,4 +78,10 @@ test('chat without photos works; image chat uses chosen photo; deleted model and
   const content=JSON.parse(calls.at(-1).payload.contents.at(-1).parts[0].text.split('Dữ liệu tham khảo (JSON):\n')[1]);assert.equal(content.ket_qua_nhan_dien.chi_so_anh,2);assert.equal(content.ket_qua_nhan_dien.tong_so_vung,2);assert.ok(!JSON.stringify(calls).includes(jpeg));
   assert.equal((await b.json('/api/chat',{...question,confidence:.4})).status,400);
   await a.json('/api/delete-remote-model',{id:model,admin_token:a.token});assert.equal((await b.json('/api/chat',question)).status,400);assert.equal((await b.json('/api/state')).photos[0].scanned,false);
+});
+test('Google redirects are rejected without forwarding API credentials',async()=>{let calls=0;await assert.rejects(retrieve(environment(),'test-key','mụn',[],async(url,options)=>{calls++;assert.equal(options.redirect,'manual');return new Response(null,{status:302,headers:{Location:'https://evil.example/'}});}));assert.equal(calls,1);});
+test('Ultralytics redirects are rejected and do not produce image results',async()=>{
+  let calls=0;const fetcher=async(url,options)=>{calls++;assert.equal(options.redirect,'manual');return new Response(null,{status:307,headers:{Location:'https://evil.example/'}});};
+  const env=environment(),b=await admin(env,fetcher);const modelState=await b.json('/api/add-remote-model',{admin_token:b.token,name:'redirect model',endpoint:'https://x.a.run.app',key:'ul_test_only_12345678'});
+  await b.json('/api/photo',{name:'test.jpg',data:jpeg});const scanned=await b.json('/api/scan',{provider:'remote',remote_model:modelState.remote.models[0].id,confidence:.25});assert.equal(scanned.photos[0].scanned,false);assert.ok(scanned.photos[0].error);assert.equal(calls,1);
 });
