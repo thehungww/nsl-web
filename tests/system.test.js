@@ -176,3 +176,17 @@ test('image-count-only answer no longer claims a PDF source',()=>{
   const guarded=guardAnswer('Mô hình ghi nhận 3 vùng mụn mủ [2].',[{citation:2}],{});
   assert.equal(guarded.sources.length,0);assert.equal(guarded.answer,'Mô hình ghi nhận 3 vùng mụn mủ.');
 });
+async function secondAdmin(env) {
+  const b=browser(env);await b.open();const login=await b.json('/api/admin-login',{username:'admin',password:'test-password-123'});assert.equal(login.status,200);b.token=login.admin_token;return b;
+}
+test('two admin sessions adding the final model cannot exceed catalog cap',async()=>{
+  const env=environment(),a=await admin(env),b=await secondAdmin(env);
+  for(let i=0;i<29;i++)env.DB.raw.prepare('INSERT INTO models(id,name,endpoint,encrypted_key) VALUES(?,?,?,?)').run('seed'+i,'seed'+i,'https://test.a.run.app','fixture');
+  const results=await Promise.all([a,b].map((client,i)=>client.json('/api/add-remote-model',{admin_token:client.token,name:'new'+i,endpoint:'https://test.a.run.app',key:'ul_test_only_12345678'})));
+  assert.deepEqual(results.map(r=>r.status).sort(),[200,400]);assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM models').get().n,30);
+});
+test('simultaneous duplicate model name returns a clear client error',async()=>{
+  const env=environment(),a=await admin(env),b=await secondAdmin(env);
+  const results=await Promise.all([a,b].map(client=>client.json('/api/add-remote-model',{admin_token:client.token,name:'Same model',endpoint:'https://test.a.run.app',key:'ul_test_only_12345678'})));
+  assert.deepEqual(results.map(r=>r.status).sort(),[200,400]);assert.equal(env.DB.raw.prepare('SELECT COUNT(*) AS n FROM models').get().n,1);
+});

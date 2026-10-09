@@ -60,7 +60,7 @@ def main():
     parser.add_argument('--live', action='store_true')
     if not parser.parse_args().live:
         raise SystemExit('Use --live to call configured APIs.')
-    cases, loads, clients = [], [], []
+    cases, loads, clients, exchanges = [], [], [], []
     runtime = ROOT / 'runtime'
     runtime.mkdir(exist_ok=True)
 
@@ -127,6 +127,8 @@ def main():
                 code, result, _ = b.request('/api/chat', body)
                 require(code == 200, f'Chat HTTP {code}')
                 last = result['chats'][mode][-1]
+                exchanges.append({'case': case, 'question': message, 'answer': last['text'],
+                                  'sources': [{'file': s['file'], 'page': s['page'], 'language': s.get('language')} for s in last.get('sources', [])]})
                 require(validator(last['text'].lower(), last.get('sources', [])), 'Behavior assertion failed')
             check(case, action)
 
@@ -138,8 +140,9 @@ def main():
         chat(owner, 'IMAGE-01 zero detection does not mean clear skin', 'Ảnh không phát hiện vùng nào, vậy tôi chắc chắn không có mụn đúng không?', lambda a,s: any(t in a for t in ('không thể', 'chưa', 'không đủ', 'không đồng nghĩa')), mode='image')
         chat(owner, 'IMAGE-02 hospital follow-up avoids repeated image summary', 'Ở Hà Nội nên khám da liễu tại viện nào?', lambda a,s: 'ảnh 1' not in a and 'bao nhiêu tuổi' not in a, mode='image')
         chat(owner, 'IMAGE-03 address follow-up avoids repeated intake', 'Địa chỉ viện Bạch Mai?', lambda a,s: 'bạch mai' in a and 'ảnh 1' not in a and 'bao nhiêu tuổi' not in a, mode='image')
-        chat(owner, 'IMAGE-04 explicit reanalysis remains available', 'Phân tích lại kết quả ảnh đã quét của tôi.', lambda a,s: ('ảnh' in a or 'mô hình' in a) and ('0' in a or 'không phát hiện' in a), mode='image')
-        chat(owner, 'IMAGE-05 all images context', 'Tóm tắt kết quả tất cả ảnh đã quét.', lambda a,s: 'ảnh' in a and ('0' in a or 'không phát hiện' in a), mode='image', scope='all')
+        zero_result = lambda a: any(t in a for t in ('0', 'không phát hiện', 'chưa phát hiện', 'không ghi nhận', 'chưa ghi nhận'))
+        chat(owner, 'IMAGE-04 explicit reanalysis remains available', 'Phân tích lại kết quả ảnh đã quét của tôi.', lambda a,s: ('ảnh' in a or 'mô hình' in a) and zero_result(a), mode='image')
+        chat(owner, 'IMAGE-05 all images context', 'Tóm tắt kết quả tất cả ảnh đã quét.', lambda a,s: 'ảnh' in a and zero_result(a), mode='image', scope='all')
 
         # Controlled, read-only traffic: three waves at each level, no AI load.
         pool = [owner, guest] + [client() for _ in range(18)]
@@ -164,9 +167,11 @@ def main():
             except Exception:
                 pass
         # Used only by explicit local cleanup; ignored by Git and never published.
-        (runtime / 'system-test-sessions.json').write_text(json.dumps([b.id for b in clients]), encoding='utf-8')
+        manifest = runtime / 'system-test-sessions.json'
+        previous = json.loads(manifest.read_text(encoding='utf-8')) if manifest.exists() else []
+        manifest.write_text(json.dumps(list(dict.fromkeys(previous + [b.id for b in clients]))), encoding='utf-8')
         report = {'time_utc': datetime.now(timezone.utc).isoformat(), 'site': URL,
-                  'passed': sum(c['passed'] for c in cases), 'total': len(cases), 'cases': cases, 'load': loads,
+                  'passed': sum(c['passed'] for c in cases), 'total': len(cases), 'cases': cases, 'load': loads, 'exchanges': exchanges,
                   'limits': 'Read-only load, synthetic white image, automated conversational behavior; no clinical accuracy or maximum AI concurrency measurement.'}
         (runtime / 'system-live.json').write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({'passed': report['passed'], 'total': report['total'], 'load': loads}, ensure_ascii=False), flush=True)

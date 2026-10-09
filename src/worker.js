@@ -108,7 +108,11 @@ async function mutate(path,body,env,session,request,fetcher) {
     const records=(await env.DB.prepare('SELECT id,name FROM models').all()).results;
     if(records.length>=30) throw new UserError('Danh sách tối đa 30 mô hình.');
     if(records.some(m=>m.name.toLowerCase()===name.toLowerCase())) throw new UserError('Tên mô hình đã tồn tại.');
-    await env.DB.prepare('INSERT INTO models(id,name,endpoint,encrypted_key) VALUES(?,?,?,?)').bind(randomHex(12),name,endpoint(body.endpoint),await encrypt(body.key,env.APP_SECRET)).run();
+    const inserted=await env.DB.prepare('INSERT INTO models(id,name,endpoint,encrypted_key) SELECT ?,?,?,? WHERE (SELECT COUNT(*) FROM models) < 30 AND NOT EXISTS (SELECT 1 FROM models WHERE name=?)').bind(randomHex(12),name,endpoint(body.endpoint),await encrypt(body.key,env.APP_SECRET),name).run();
+    if(!inserted.meta.changes) {
+      const duplicate=await env.DB.prepare('SELECT id FROM models WHERE name=?').bind(name).first();
+      throw new UserError(duplicate?'Tên mô hình đã tồn tại.':'Danh sách tối đa 30 mô hình.');
+    }
     session.status='Đã thêm mô hình vào danh sách dùng chung.';return;
   }
   if(path==='/api/delete-remote-model') { await env.DB.prepare('DELETE FROM models WHERE id=?').bind(String(body.id || '')).run();return; }
