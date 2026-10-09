@@ -1,0 +1,6 @@
+{
+  "model": "gemini-embedding-001",
+  "dimensions": 768,
+  "chunks": 189,
+  "corpus_sha256": "789a8ae19a4321bf322e69b83f7573c97821481a57d89efce1fe2122a02ecc15"
+}

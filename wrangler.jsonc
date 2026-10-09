@@ -1,0 +1,37 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "nsl",
+	"main": "src/worker.js",
+	"compatibility_date": "2026-10-09",
+	"assets": {
+		"directory": "public",
+		"binding": "ASSETS",
+		"run_worker_first": true
+	},
+	"d1_databases": [
+		{
+			"binding": "DB",
+			"database_name": "nsl-web",
+			"database_id": "8302f4a8-93b5-40f0-a945-5c4c672651a5",
+			"migrations_dir": "migrations"
+		}
+	],
+	"vectorize": [
+		{
+			"binding": "RAG",
+			"index_name": "nsl-acne-gemini-768"
+		}
+	],
+	"vars": {
+		"GEMINI_MODEL": "gemini-3.5-flash-lite",
+		"EMBEDDING_MODEL": "gemini-embedding-001"
+	},
+	"triggers": {
+		"crons": [
+			"0 * * * *"
+		]
+	},
+	"observability": {
+		"enabled": false
+	}
+}

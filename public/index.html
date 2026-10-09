@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="vi">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="acne-token" content="__TOKEN__"><title>Ngô Sĩ Liên · Nhận diện mụn</title><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script></head>
+<body>
+<header><div class="brand"><img src="/logo.jpg" alt="Logo trường Ngô Sĩ Liên"><div><p>TRUNG HỌC CƠ SỞ NGÔ SĨ LIÊN</p><h1>NHẬN DIỆN MỤN QUA HÌNH ẢNH</h1></div></div><div class="header-actions"><span class="local-pill"><i></i> Web trực tuyến</span><button id="documents-button">Tài liệu tham khảo ↗</button></div></header>
+<main>
+<aside class="card controls">
+<div class="section-label">01 <span>MÔ HÌNH NHẬN DIỆN</span></div>
+<label class="sr-only" for="recognition-mode">Nơi nhận diện</label><select id="recognition-mode"><option value="local">Nhận diện trên máy này</option><option value="remote">Máy chủ Ultralytics</option></select>
+<div id="local-model-controls">
+<label class="sr-only" for="model">Chọn mô hình</label><select id="model"><option value="">Đang đọc mô hình…</option></select>
+<details><summary>Quản lý mô hình</summary><div class="management"><button id="upload-model">+ Tải mô hình</button><button id="delete-model" class="danger">Xóa mô hình đang chọn</button><small>Mô hình .pt / .onnx · tối đa 23 MB</small></div></details>
+</div><div id="remote-controls" class="hidden"><label for="remote-model" class="sr-only">Chọn mô hình Ultralytics</label><select id="remote-model"><option value="">Chọn mô hình nhận diện</option></select><button id="remote-settings">Quản lý mô hình API</button><p id="remote-note" class="help">Ảnh gửi tới Ultralytics. Chatbot và RAG vẫn chạy trên máy bạn.</p></div>
+<div class="rule"></div>
+<div class="section-label">02 <span>ẢNH KHUÔN MẶT</span></div>
+<div class="two-buttons"><button id="add-images">＋ Thêm ảnh</button><button id="camera-button">▣ Chụp ảnh</button></div>
+<p class="muted" id="image-count">Chưa thêm ảnh</p>
+<div class="range-label"><label for="confidence">Ngưỡng tin cậy</label><strong id="confidence-value">25%</strong></div><input id="confidence" type="range" min="1" max="95" value="25">
+<p class="help">Ngưỡng thấp dễ nhận nhầm.</p>
+<button id="scan" class="primary" disabled>Quét ảnh</button>
+<button id="remove-image" class="quiet" disabled>Bỏ ảnh đang xem</button>
+<div class="rule"></div>
+<div class="section-label">03 <span>CÁC LOẠI MỤN TRONG ẢNH</span></div><div id="types"><p class="help">Các loại mụn sẽ hiển thị sau khi quét.</p></div>
+<div class="aside-note">Ảnh và đoạn chat riêng theo phiên; hết hạn sau 1 giờ không hoạt động.</div>
+</aside>
+<section class="card results">
+<div class="card-heading"><div><p class="eyebrow">KẾT QUẢ PHÂN TÍCH</p><h2 id="result-title">Khám phá làn da của bạn</h2><p id="result-subtitle" class="muted">Thêm hình ảnh để bắt đầu nhận diện</p></div><button id="fit" class="square" title="Vừa khung ảnh" aria-label="Vừa khung ảnh">⛶</button></div>
+<div class="result-actions"><div class="segmented"><button id="original-tab" class="active">Ảnh gốc</button><button id="result-tab">Nhận diện</button></div><a id="save-result" class="button hidden" download="anh_nhan_dien.png">↓ Lưu kết quả</a></div>
+<div id="viewer"><div id="empty"><div class="empty-icon">＋</div><h3>Thêm ảnh khuôn mặt</h3><p>Chọn nhiều ảnh hoặc chụp trực tiếp bằng camera</p><button id="empty-add">Chọn hình ảnh</button></div><img id="large-image" alt="Ảnh khuôn mặt đang xem" class="hidden" draggable="false"></div>
+<div id="gallery" aria-label="Các ảnh đã thêm"></div><p class="viewer-help">Cuộn để phóng to · Kéo để di chuyển · Bấm ảnh thu nhỏ để đổi góc mặt</p>
+<div id="detections" class="hidden"><table><thead><tr><th>Vùng</th><th>Loại mụn / tên mô hình</th><th>Tin cậy</th></tr></thead><tbody id="detection-rows"></tbody></table></div>
+</section>
+<section class="card chat">
+<div class="card-heading"><div><p class="eyebrow">CÙNG BẠN CHĂM SÓC DA</p><h2>Chatbot hỗ trợ da liễu</h2></div><span class="chat-dot"></span></div>
+<div class="segmented chat-tabs"><button id="general-tab" class="active">Chat riêng</button><button id="image-chat-tab">Theo ảnh</button></div>
+<div id="scope-controls" class="hidden"><label><input name="scope" type="radio" value="one" checked> 1 ảnh đang xem</label><label><input name="scope" type="radio" value="all"> Tất cả ảnh</label></div>
+<p id="chat-note" class="help">Hỏi về chăm sóc da, kể cả khi chưa có ảnh. Câu trả lời bằng tiếng Việt.</p>
+<button id="analyze-image" class="hidden">✦ Phân tích kết quả ảnh</button>
+<div id="messages" aria-live="polite"><div class="welcome"><div class="welcome-icon">✦</div><h3>Tôi có thể hỗ trợ gì cho bạn?</h3><p>Trao đổi về mụn, thói quen chăm sóc da hoặc tìm thông tin trong tài liệu tham khảo.</p><button class="suggestion">Tôi nên chăm sóc da mụn như thế nào?</button><button class="suggestion">Khi nào cần gặp bác sĩ da liễu?</button></div></div>
+<form id="chat-form"><label for="question" class="sr-only">Câu hỏi dành cho chatbot</label><textarea id="question" maxlength="3000" rows="2" placeholder="Nhập câu hỏi của bạn…"></textarea><div class="composer-footer"><button type="button" id="new-chat" class="text-button">＋ Đoạn chat mới</button><button id="send" type="submit" class="primary">Gửi ↑</button></div></form>
+<p class="chat-disclaimer">Thông tin tham khảo, không thay thế thăm khám da liễu. <button id="chat-settings" type="button" class="text-button">Cài đặt chatbot</button></p>
+</section>
+</main>
+<footer><span id="status" role="status">Đang kết nối…</span><button id="admin-button" class="text-button">Đăng nhập admin</button><span id="busy-indicator" class="hidden">ĐANG XỬ LÝ <i></i></span></footer>
+<dialog id="admin-dialog"><div class="dialog-heading"><h2 id="admin-title">Đăng nhập admin</h2><button id="close-admin" class="square" aria-label="Đóng đăng nhập">×</button></div><form id="admin-form"><p class="help">Tài khoản: admin. Chỉ admin mới được thêm hoặc xóa mô hình.</p><div id="setup-token-row" class="hidden"><label for="setup-token">Mã thiết lập của chủ web</label><input id="setup-token" type="password" autocomplete="off" maxlength="100"><p class="help">Mã riêng trong tệp setup-private.txt, chỉ dùng để tạo admin lần đầu.</p></div><label for="admin-password">Mật khẩu</label><input id="admin-password" type="password" autocomplete="current-password" maxlength="256" required><div id="admin-confirm-row"><label for="admin-confirm">Nhập lại mật khẩu</label><input id="admin-confirm" type="password" autocomplete="new-password" maxlength="256"></div><p id="admin-feedback" class="help" aria-live="polite"></p><div class="dialog-footer"><button type="submit" class="primary">Xác nhận</button></div></form></dialog>
+<input id="image-files" type="file" accept="image/*" multiple hidden><input id="model-file" type="file" accept=".pt,.onnx" hidden>
+<dialog id="camera-dialog"><div class="dialog-heading"><div><p class="eyebrow">CAMERA MÁY TÍNH</p><h2>Chụp một góc khuôn mặt</h2></div><button id="close-camera" class="square" aria-label="Đóng camera">×</button></div><video id="camera-video" autoplay muted playsinline></video><p id="camera-status" class="help">Đang mở camera…</p><div class="dialog-footer"><button id="capture" class="primary" disabled>Chụp và thêm ảnh</button></div></dialog>
+<dialog id="documents-dialog"><div class="dialog-heading"><div><p class="eyebrow">KHO TÀI LIỆU CHATBOT</p><h2>Tài liệu tham khảo</h2></div><button id="close-documents" class="square" aria-label="Đóng tài liệu">×</button></div><p class="help">Hỏi bằng tiếng Việt để tra cứu cả tài liệu tiếng Anh. Mở PDF để đọc bản gốc.</p><div id="document-list"></div></dialog>
+<dialog id="source-dialog"><div class="dialog-heading"><h2>Đoạn tài liệu tham khảo</h2><button id="close-source" class="square" aria-label="Đóng đoạn tham khảo">×</button></div><p id="source-label" class="muted"></p><pre id="source-text"></pre><a id="source-pdf" class="button primary" target="_blank" rel="noopener">Mở PDF gốc ↗</a></dialog>
+<dialog id="remote-dialog"><div class="dialog-heading"><h2>Quản lý mô hình Ultralytics</h2><button id="close-remote" class="square" aria-label="Đóng cài đặt máy chủ">×</button></div><p id="remote-selected-label" class="help"></p><p class="help">Dùng API key gắn với deployment này trong Predict → Docs trên Ultralytics. Key được mã hóa trên máy chủ; trình duyệt không lưu key.</p><form id="remote-form"><label for="remote-name">Tên mô hình</label><input id="remote-name" maxlength="80" placeholder="Ví dụ: Mô hình mụn v2" required><label for="remote-endpoint-input">Endpoint của mô hình</label><input id="remote-endpoint-input" type="url" placeholder="https://predict-…a.run.app" required><label for="remote-key">API key Ultralytics</label><input id="remote-key" type="password" placeholder="ul_…" autocomplete="off" required><p id="remote-feedback" class="help" aria-live="polite"></p><div class="dialog-footer"><button id="delete-remote-key" type="button" class="danger">Xóa mô hình đang chọn</button><button type="submit" class="primary">Thêm mô hình</button></div></form></dialog>
+<dialog id="chat-dialog"><div class="dialog-heading"><h2>Cài đặt chatbot</h2><button id="close-chat-settings" class="square" aria-label="Đóng cài đặt chatbot">×</button></div><p class="help">Chỉ admin được quản lý API key. Người dùng sử dụng kết nối chung; câu hỏi và đoạn tài liệu liên quan được gửi tới dịch vụ chatbot.</p><form id="chat-settings-form"><label for="chat-key">API key</label><input id="chat-key" type="password" autocomplete="off" maxlength="512" placeholder="Nhập key mới hoặc để trống để giữ key hiện tại"><p id="chat-feedback" class="help" aria-live="polite"></p><div class="dialog-footer"><button id="delete-chat-key" type="button" class="danger">Xóa API key</button><button type="submit" class="primary">Lưu cấu hình</button></div></form></dialog>
+</body></html>

@@ -1,0 +1,8 @@
+node_modules/
+.wrangler/
+.dev.vars*
+.env*
+*.secret.json
+setup-private.txt
+runtime/
+*.log
