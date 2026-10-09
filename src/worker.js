@@ -159,7 +159,7 @@ async function mutate(path,body,env,session,request,fetcher) {
   }
   throw new UserError('Không có chức năng này.',404);
 }
-export async function handle(request,env,ctx,fetcher=fetch) {
+export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globalThis)) {
   const url=new URL(request.url),path=url.pathname;
   if(!env.DB) return json({error:'Chưa liên kết cơ sở dữ liệu Cloudflare. Chạy npm run setup.'},503);
   let current,cookie='',session;

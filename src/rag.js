@@ -7,7 +7,11 @@ const API = 'https://generativelanguage.googleapis.com/v1beta/models/';
 async function google(path, body, key, fetcher) {
   let response;
   try { response = await fetcher(API + path, { method: 'POST', headers: {'Content-Type':'application/json','x-goog-api-key':key}, body:JSON.stringify(body), signal: AbortSignal.timeout(90000), redirect:'error' }); }
-  catch { throw new UserError('Không kết nối được chatbot. Thử gửi lại sau.',502); }
+  catch (error) {
+    const message=String(error?.message || '').replaceAll(key,'[redacted]').slice(0,240);
+    console.error('AI transport',path.endsWith(':embedContent')?'embedding':'chat',error?.name || 'Error',message);
+    throw new UserError('Không kết nối được chatbot. Thử gửi lại sau.',502);
+  }
   if (!response.ok) {
     await response.body?.cancel();
     const errors = {400:'Dịch vụ AI từ chối yêu cầu.',401:'API key không hợp lệ.',403:'API key chưa có quyền dùng dịch vụ AI.',404:'Mô hình AI không khả dụng.',429:'Dịch vụ AI đã đạt hạn mức. Thử lại sau.'};
