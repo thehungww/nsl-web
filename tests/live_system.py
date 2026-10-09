@@ -31,7 +31,7 @@ class Client:
         self.id = ''
 
     def request(self, path, body=None, headers=None):
-        headers = dict(headers or {})
+        headers = {'User-Agent': 'Mozilla/5.0 NSLSystemTest/1.0', **(headers or {})}
         if body is not None:
             headers.update({'Content-Type': 'application/json', 'Origin': URL, 'X-Acne-Token': self.csrf})
         req = urllib.request.Request(URL + path, data=None if body is None else json.dumps(body).encode(), headers=headers)

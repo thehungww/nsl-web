@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { handle } from '../src/worker.js';
 import { encrypt } from '../src/security.js';
-import { retrieve, reply } from '../src/rag.js';
+import { retrieve, reply, guardAnswer } from '../src/rag.js';
 import corpus from '../data/corpus.json' with {type:'json'};
 import { secret, base, jpeg, environment, browser, admin, detectionData } from './fixtures.mjs';
 
@@ -165,4 +165,14 @@ test('state invalidation and image chat reset preserve unrelated general chat',a
   await b.json('/api/chat',question);const uploaded=await b.json('/api/photo',{data:jpeg});await b.json('/api/scan',scan);
   await b.json('/api/chat',{mode:'image',message:'Phân tích ảnh',scope:'one',image_id:uploaded.photos[0].id,confidence:.25});
   const reset=await b.json('/api/invalidate',{});assert.equal(reset.chats.general.length,2);assert.equal(reset.chats.image.length,0);assert.equal(reset.photos[0].scanned,false);
+});
+test('PDF citation is removed from image counts but preserved for adjacent knowledge',()=>{
+  const input='Ảnh số 1: Phát hiện tổng cộng **5** vùng mụn đầu trắng [1]. Nhân trứng cá đóng là mụn đầu trắng [1].';
+  const guarded=guardAnswer(input,[{citation:1}],{pham_vi:'mot_anh'});
+  assert.equal(guarded.answer,'Ảnh số 1: Phát hiện tổng cộng **5** vùng mụn đầu trắng. Nhân trứng cá đóng là mụn đầu trắng [1].');
+  assert.equal(guarded.sources.length,1);assert.equal(guardAnswer(input,[{citation:1}]).answer,input);
+});
+test('image-count-only answer no longer claims a PDF source',()=>{
+  const guarded=guardAnswer('Mô hình ghi nhận 3 vùng mụn mủ [2].',[{citation:2}],{});
+  assert.equal(guarded.sources.length,0);assert.equal(guarded.answer,'Mô hình ghi nhận 3 vùng mụn mủ.');
 });

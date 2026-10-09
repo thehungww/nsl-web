@@ -42,8 +42,9 @@ export async function retrieve(env, key, message, history, fetcher = fetch) {
   }
   return sources;
 }
-export function guardAnswer(answer, sources) {
+export function guardAnswer(answer, sources, context=null) {
   if (/\d[\d.,]*(?:\s*[–-]\s*\d[\d.,]*)?\s*(?:mg|mcg|µg|μg)\b/i.test(answer.replace(/[*_`\u200b]/g,''))) return {answer:DOSE_REFUSAL,sources:[]};
+  if(context) answer=answer.replace(/(?:phát hiện|nhận diện|ghi nhận|đếm được)\s+(?:tổng cộng\s+)?[*_]*\d+[*_]*\s+vùng[^.!?\n]*/giu,fragment=>fragment.replace(/\s*\[\d+\]/g,''));
   const valid = new Set(sources.map(s => String(s.citation)));
   answer = answer.replace(/\[(\d+)\]/g,(full,n) => valid.has(n) ? full : '[nguồn không hợp lệ]');
   const cited = new Set([...answer.matchAll(/\[(\d+)\]/g)].map(m=>m[1]));
@@ -62,7 +63,7 @@ export async function reply(env, key, context, history, message, fetcher = fetch
   if (result.promptFeedback?.blockReason || !candidate || ['SAFETY','RECITATION','PROHIBITED_CONTENT'].includes(candidate.finishReason)) throw new UserError('Chatbot không thể trả lời yêu cầu này. Hãy diễn đạt lại.');
   const answer = (candidate.content?.parts || []).filter(p=>!p.thought).map(p=>p.text || '').join('').trim();
   if (!answer) throw new UserError('Chatbot chưa có câu trả lời. Thử gửi lại.');
-  const guarded = guardAnswer(answer,sources);
+  const guarded = guardAnswer(answer,sources,context);
   if (!evidence.length) guarded.answer = 'Thông tin chung từ mô hình · Chưa đối chiếu với tài liệu trong kho.\n\n'+guarded.answer;
   return guarded;
 }
