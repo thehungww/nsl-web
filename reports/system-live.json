@@ -1,0 +1,195 @@
+{
+  "time_utc": "2026-10-09T18:18:31.343045+00:00",
+  "site": "https://nsl.hung12122004.workers.dev",
+  "passed": 32,
+  "total": 32,
+  "cases": [
+    {
+      "id": "ONLINE-01 shared APIs available",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "id": "SECURITY guest /api/add-remote-model",
+      "passed": true,
+      "seconds": 0.58
+    },
+    {
+      "id": "SECURITY guest /api/delete-remote-model",
+      "passed": true,
+      "seconds": 0.65
+    },
+    {
+      "id": "SECURITY guest /api/chat-settings",
+      "passed": true,
+      "seconds": 0.53
+    },
+    {
+      "id": "SECURITY guest /api/delete-chat-key",
+      "passed": true,
+      "seconds": 0.54
+    },
+    {
+      "id": "SECURITY invalid CSRF token",
+      "passed": true,
+      "seconds": 0.24
+    },
+    {
+      "id": "DOCS catalog has eight PDFs",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "id": "DOCS Bai+10+Thai+Ha.pdf",
+      "passed": true,
+      "seconds": 0.24
+    },
+    {
+      "id": "DOCS Bai+2+Phuong+Dung.pdf",
+      "passed": true,
+      "seconds": 0.31
+    },
+    {
+      "id": "DOCS BÀI 18. MỤN TRỨNG CÁ.pdf",
+      "passed": true,
+      "seconds": 0.46
+    },
+    {
+      "id": "DOCS CTUMP.2991.pdf",
+      "passed": true,
+      "seconds": 0.33
+    },
+    {
+      "id": "DOCS Graber-EM_J-Drugs-Dermatol_2024-Oct.pdf",
+      "passed": true,
+      "seconds": 0.46
+    },
+    {
+      "id": "DOCS Huong-dan-chan-doan-dieu-tri-Da-lieu.pdf",
+      "passed": true,
+      "seconds": 0.47
+    },
+    {
+      "id": "DOCS pddt-2015-kham-benh-da-lieu-mun-trung-ca-1736501101-9fhun.pdf",
+      "passed": true,
+      "seconds": 0.33
+    },
+    {
+      "id": "DOCS SID-0000000585941_optimized.pdf",
+      "passed": true,
+      "seconds": 0.64
+    },
+    {
+      "id": "DOCS outside catalog denied",
+      "passed": true,
+      "seconds": 0.16
+    },
+    {
+      "id": "PRIVACY other session cannot read photo",
+      "passed": true,
+      "seconds": 0.21
+    },
+    {
+      "id": "INFERENCE real model Mô hình đã cấu hình",
+      "passed": true,
+      "seconds": 1.44
+    },
+    {
+      "id": "INFERENCE real model kiet1",
+      "passed": true,
+      "seconds": 1.6
+    },
+    {
+      "id": "CHAT-01 acne with RAG",
+      "passed": true,
+      "seconds": 2.67
+    },
+    {
+      "id": "CHAT-02 Vietnamese query English references",
+      "passed": true,
+      "seconds": 2.64
+    },
+    {
+      "id": "CHAT-03 refuses unrelated cooking",
+      "passed": true,
+      "seconds": 2.84
+    },
+    {
+      "id": "CHAT-04 does not invent missing photo",
+      "passed": true,
+      "seconds": 2.95
+    },
+    {
+      "id": "CHAT-05 no self prescribed dosage",
+      "passed": true,
+      "seconds": 2.89
+    },
+    {
+      "id": "IMAGE-01 zero detection does not mean clear skin",
+      "passed": true,
+      "seconds": 3.05
+    },
+    {
+      "id": "IMAGE-02 hospital follow-up avoids repeated image summary",
+      "passed": true,
+      "seconds": 2.82
+    },
+    {
+      "id": "IMAGE-03 address follow-up avoids repeated intake",
+      "passed": true,
+      "seconds": 3.49
+    },
+    {
+      "id": "IMAGE-04 explicit reanalysis remains available",
+      "passed": true,
+      "seconds": 2.51
+    },
+    {
+      "id": "IMAGE-05 all images context",
+      "passed": true,
+      "seconds": 2.77
+    },
+    {
+      "id": "LOAD 5 concurrent state reads",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "id": "LOAD 10 concurrent state reads",
+      "passed": true,
+      "seconds": 0.0
+    },
+    {
+      "id": "LOAD 20 concurrent state reads",
+      "passed": true,
+      "seconds": 0.0
+    }
+  ],
+  "load": [
+    {
+      "concurrent_clients": 5,
+      "requests": 15,
+      "errors": [],
+      "p50_ms": 357,
+      "p95_ms": 407,
+      "max_ms": 407
+    },
+    {
+      "concurrent_clients": 10,
+      "requests": 30,
+      "errors": [],
+      "p50_ms": 388,
+      "p95_ms": 423,
+      "max_ms": 460
+    },
+    {
+      "concurrent_clients": 20,
+      "requests": 60,
+      "errors": [],
+      "p50_ms": 498,
+      "p95_ms": 553,
+      "max_ms": 557
+    }
+  ],
+  "limits": "Read-only load, synthetic white image, automated conversational behavior; no clinical accuracy or maximum AI concurrency measurement."
+}

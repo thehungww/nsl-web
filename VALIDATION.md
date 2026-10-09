@@ -15,3 +15,5 @@ Các bài kiểm tra tự động Node/Edge dùng phản hồi giả lập và �
 Chạy lại: `npm test`, `npm run check`. Kiểm tra trình duyệt bổ sung: chạy `node tests/browser-server.mjs` và `python tests/browser_smoke.py` (cần Playwright, Edge, Pillow).
 
 Kiểm tra online tự nguyện: `python tests/live_smoke.py --live` (sử dụng quota Gemini/Ultralytics). Không chạy bài này mặc định trong CI.
+
+Ki?m th? m? r?ng v? s?a l?i ng?y 10/10/2026: xem [b?o c?o to?n h? th?ng](SYSTEM_TEST_REPORT.md). K?t qu? cu?i: 56/56 Node, 118/118 Python, 18 b??c Edge Cloudflare, 23 b??c Edge web local, 12 t?nh hu?ng Gemini th?t v? 32 testcase online.
