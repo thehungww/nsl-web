@@ -19,7 +19,8 @@ async function google(path, body, key, fetcher) {
     const errors = {400:'Dịch vụ AI từ chối yêu cầu.',401:'API key không hợp lệ.',403:'API key chưa có quyền dùng dịch vụ AI.',404:'Mô hình AI không khả dụng.',429:'Dịch vụ AI đã đạt hạn mức. Thử lại sau.'};
     throw new UserError(errors[response.status] || 'Dịch vụ AI tạm thời gặp lỗi.',502);
   }
-  const result = await response.json(); if (!result || typeof result !== 'object') throw new UserError('Phản hồi chatbot không hợp lệ.',502);
+  let result;try { result=await response.json(); } catch { throw new UserError('Phản hồi chatbot không hợp lệ.',502); }
+  if (!result || typeof result !== 'object' || Array.isArray(result)) throw new UserError('Phản hồi chatbot không hợp lệ.',502);
   return result;
 }
 export async function retrieve(env, key, message, history, fetcher = fetch) {
@@ -35,7 +36,7 @@ export async function retrieve(env, key, message, history, fetcher = fetch) {
   const sources = [], seen = new Map();
   for (const match of found.matches || []) {
     const chunk = chunkMap.get(match.id);
-    if (!chunk || match.score < 0.5 || sources.length >= 5) continue;
+    if (!chunk || !Number.isFinite(match.score) || match.score < 0.5 || sources.length >= 5) continue;
     const page = `${chunk.file}:${chunk.page}`; if ((seen.get(page) || 0) >= 2) continue;
     seen.set(page,(seen.get(page)||0)+1); sources.push({...chunk,citation:sources.length+1});
   }

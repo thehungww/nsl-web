@@ -16,23 +16,36 @@ async function save(env,session) {
   if (data.length > 900000) throw new UserError('Phiên quá lớn. Bắt đầu đoạn chat mới hoặc bỏ bớt ảnh.');
   await env.DB.prepare('UPDATE sessions SET data=?, expires=? WHERE id=?').bind(data,now()+3600,session.id).run();
 }
+function sessionCookie(request,id) {
+  const secure=new URL(request.url).protocol==='https:'?'; Secure':'';
+  return `nsl_session=${id}; HttpOnly; SameSite=Strict; Path=/; Max-Age=3600${secure}`;
+}
 async function sessionFor(request,env,create=false) {
   const match=(request.headers.get('Cookie') || '').match(/(?:^|;\s*)nsl_session=([a-f0-9]{48})(?:;|$)/);
   const row=match && await env.DB.prepare('SELECT data,expires,lock_until FROM sessions WHERE id=?').bind(match[1]).first();
   if (row && row.expires > now()) return {session:JSON.parse(row.data),locked:row.lock_until > now(),cookie:''};
   if (!create) throw new UserError('Phiên đã hết hạn. Tải lại trang để tiếp tục.',401);
-  await env.DB.prepare('DELETE FROM sessions WHERE expires < ?').bind(now()).run();
-  const total=await env.DB.prepare('SELECT COUNT(*) AS total FROM sessions').first();
-  if (total.total >= 64) throw new UserError('Web đang phục vụ nhiều người. Thử lại sau.',429);
+  await env.DB.prepare('DELETE FROM sessions WHERE expires <= ?').bind(now()).run();
   const session={id:randomHex(),csrf:randomHex(),photos:[],chats:{general:[],image:[]},image_context:null,selected_model:'',admin_until:0,admin_token:'',status:'Sẵn sàng',error:''};
-  await env.DB.prepare('INSERT INTO sessions(id,data,expires) VALUES(?,?,?)').bind(session.id,JSON.stringify(session),now()+3600).run();
-  const secure=new URL(request.url).protocol==='https:'?'; Secure':'';
-  return {session,locked:false,cookie:`nsl_session=${session.id}; HttpOnly; SameSite=Strict; Path=/; Max-Age=3600${secure}`};
+  // Admission must be one statement: separate COUNT and INSERT race across requests.
+  const admitted=await env.DB.prepare('INSERT INTO sessions(id,data,expires) SELECT ?,?,? WHERE (SELECT COUNT(*) FROM sessions) < 64').bind(session.id,JSON.stringify(session),now()+3600).run();
+  if (!admitted.meta.changes) throw new UserError('Web đang phục vụ nhiều người. Thử lại sau.',429);
+  return {session,locked:false,cookie:sessionCookie(request,session.id)};
 }
-async function publicState(env,session,locked=false) {
+async function publicState(env,session,locked=false,persist=true) {
   const models=(await env.DB.prepare('SELECT id,name,endpoint FROM models ORDER BY rowid').all()).results;
   if (!locked && session.selected_model && !models.some(m=>m.id===session.selected_model)) {
-    invalidate(session); session.selected_model=''; session.status='Mô hình đã bị xóa. Chọn mô hình khác rồi quét lại.'; await save(env,session);
+    const previous=JSON.stringify(session);
+    invalidate(session); session.selected_model=''; session.status='Mô hình đã bị xóa. Chọn mô hình khác rồi quét lại.';
+    if(persist) {
+      // A background GET may be older than a concurrent upload/chat/logout.
+      const changed=await env.DB.prepare('UPDATE sessions SET data=? WHERE id=? AND data=? AND lock_until < ?').bind(JSON.stringify(session),session.id,previous,now()).run();
+      if(!changed.meta.changes) {
+        const latest=await env.DB.prepare('SELECT data,lock_until FROM sessions WHERE id=?').bind(session.id).first();
+        if(!latest) throw new UserError('Phiên đã hết hạn. Tải lại trang để tiếp tục.',401);
+        return publicState(env,JSON.parse(latest.data),latest.lock_until>now(),false);
+      }
+    }
   }
   const configured=!!await setting(env.DB,'admin');
   return {shared:true,remote_only:true,models:[],selected_model:session.selected_model,
@@ -172,7 +185,8 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
     }
     if(request.method==='GET' && path==='/api/documents') return json({documents});
     if(request.method==='GET' && !['/','/api/state','/photo'].includes(path)) throw new UserError('Không tìm thấy trang.',404);
-    current=await sessionFor(request,env,path==='/' || path==='/api/state');session=current.session;cookie=current.cookie;
+    if(!['GET','POST'].includes(request.method)) throw new UserError('Phương thức không hỗ trợ.',405);
+    current=await sessionFor(request,env,path==='/' && request.method==='GET');session=current.session;cookie=current.cookie;
     const headers=cookie?{'Set-Cookie':cookie}:{};
     if(request.method==='GET' && path==='/') {
       const html=await env.ASSETS.fetch(new Request(url.origin+'/index.html'));
@@ -191,13 +205,14 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
     const body=await bodyOf(request);
     const lock=await env.DB.prepare('UPDATE sessions SET lock_until=? WHERE id=? AND lock_until < ?').bind(now()+1800,session.id,now()).run();
     if(!lock.meta.changes) throw new UserError('Phiên đang xử lý. Chờ hoàn tất rồi thử lại.',409);
+    cookie=sessionCookie(request,session.id);headers['Set-Cookie']=cookie;
     try {
       // Re-read after acquiring the lock so concurrent logout/edits cannot use stale privileges.
       session=JSON.parse((await env.DB.prepare('SELECT data FROM sessions WHERE id=?').bind(session.id).first()).data);
       session.error='';
       await mutate(path,body,env,session,request,fetcher);
+      const result=await publicState(env,session,false,false);
       await save(env,session);
-      const result=await publicState(env,session,false);
       if(path==='/api/admin-login') result.admin_token=session.admin_token;
       return json(result,200,headers);
     } catch(error) { await save(env,session);throw error; }
