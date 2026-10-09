@@ -3,6 +3,7 @@
 	"name": "nsl",
 	"main": "src/worker.js",
 	"compatibility_date": "2026-10-09",
+	"placement": { "region": "gcp:asia-southeast1" },
 	"assets": {
 		"directory": "public",
 		"html_handling": "none",

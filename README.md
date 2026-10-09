@@ -14,6 +14,8 @@ Bản web chạy bằng Cloudflare Workers, gọi Ultralytics để nhận diệ
 
 Node.js LTS cần được cài trên máy thao tác. Trong thư mục này:
 
+Worker được đặt gần vùng Singapore (`gcp:asia-southeast1`) vì Gemini kiểm tra khu vực máy chủ gọi API. Giữ cấu hình placement này khi cập nhật; lỗi `User location is not supported` không phải lỗi API key. Xem [Placement Cloudflare](https://developers.cloudflare.com/workers/configuration/placement/) và [khu vực Gemini hỗ trợ](https://ai.google.dev/gemini-api/docs/available-regions).
+
 ```powershell
 npm ci
 npx wrangler login

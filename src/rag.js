@@ -15,6 +15,7 @@ async function google(path, body, key, fetcher) {
     let detail;try { detail=await response.json(); } catch {}
     const safeMessage=String(detail?.error?.message || '').replaceAll(key,'[redacted]').replace(/AIza[A-Za-z0-9_-]+/g,'[redacted]').slice(0,400);
     console.error('AI rejection',path.endsWith(':embedContent')?'embedding':'chat',response.status,detail?.error?.status || '',safeMessage);
+    if(detail?.error?.status==='FAILED_PRECONDITION' && /location.*not supported/i.test(detail?.error?.message || '')) throw new UserError('Khu vực máy chủ chưa được dịch vụ AI hỗ trợ. Chủ web cần kiểm tra vị trí triển khai.',502);
     const errors = {400:'Dịch vụ AI từ chối yêu cầu.',401:'API key không hợp lệ.',403:'API key chưa có quyền dùng dịch vụ AI.',404:'Mô hình AI không khả dụng.',429:'Dịch vụ AI đã đạt hạn mức. Thử lại sau.'};
     throw new UserError(errors[response.status] || 'Dịch vụ AI tạm thời gặp lỗi.',502);
   }
