@@ -14,3 +14,48 @@
 @media(min-width:851px){.controls{padding:12px}.controls .section-label{font-size:11px;margin-bottom:6px}.controls .rule{margin:7px 0}.controls .muted{margin:4px 0;font-size:11px}.controls .range-label{margin-top:6px}.controls input[type=range]{margin-top:5px}.controls .help{font-size:11px;line-height:1.45;margin:4px 0 6px}#remote-settings{font-size:12px;padding:7px 8px}}
 @media(min-width:851px) and (max-width:1100px){main{grid-template-columns:230px minmax(260px,1fr) 300px}.controls .two-buttons button{white-space:nowrap}}
 @media(min-width:851px) and (max-height:720px){.controls select{min-height:36px;padding-top:6px;padding-bottom:6px}.controls .two-buttons button{padding-top:6px;padding-bottom:6px}.controls .section-label{margin-bottom:4px}#scan,#remove-image{padding-top:6px;padding-bottom:6px}#remote-settings{padding-top:5px;padding-bottom:5px}}
+
+/* Gentle motion and depth, with the existing compact layout preserved. */
+.welcome{padding:8px}.welcome h3{margin:12px 0 6px}.welcome p{margin:0 0 12px}
+body{background:radial-gradient(ellipse at 8% 0%,#def0ef80,transparent 48%),radial-gradient(ellipse at 95% 95%,#e1edf880,transparent 45%),var(--bg)}
+header{background:linear-gradient(110deg,#fff,#fbfdfd);box-shadow:0 2px 14px #17334504}
+.card{box-shadow:0 5px 24px #17334506;transition:border-color .2s ease,box-shadow .2s ease;animation:panel-enter .46s cubic-bezier(.2,.7,.2,1) backwards}
+.results{animation-delay:60ms}.chat{animation-delay:120ms}
+button,.button,select,.document{transition:background-color .18s ease,border-color .18s ease,box-shadow .18s ease,transform .18s ease}
+button.primary,.button.primary{background-image:linear-gradient(125deg,#078696,#087c8c);box-shadow:0 3px 10px #07869618}
+.segmented button.active{box-shadow:0 1px 4px #0786960d}
+#chat-form{transition:border-color .2s ease,box-shadow .2s ease}
+#chat-form:focus-within{border-color:#4eabb5;box-shadow:0 0 0 3px #0786960e}
+#viewer{background:radial-gradient(ellipse at 50% 45%,#f9fcfc,#f0f6f8);isolation:isolate;transition:box-shadow .2s ease}
+#viewer.is-scanning{box-shadow:inset 0 0 0 1px #07869655}
+#viewer.is-scanning::after{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:linear-gradient(transparent 43%,#0786960c 48%,#07869655 50%,#0786960c 52%,transparent 57%);animation:scan-sweep 2.6s ease-in-out infinite}
+#gallery button{transition:border-color .2s ease,background-color .2s ease,box-shadow .2s ease}
+#gallery button.selected{box-shadow:0 0 0 1px #07869612}
+#gallery img{transition:filter .2s ease}
+.bubble.message-enter{animation:message-enter .28s ease-out}
+.bubble.pending{background:#f5f8fa;margin-right:8px;color:var(--muted);display:flex;align-items:center;gap:9px}
+.typing-dots{display:inline-flex;gap:3px;flex-shrink:0}
+.typing-dots span{width:4px;height:4px;border-radius:50%;background:var(--accent);animation:typing-dot 1.2s ease-in-out infinite}
+.typing-dots span:nth-child(2){animation-delay:.15s}.typing-dots span:nth-child(3){animation-delay:.3s}
+dialog[open]{animation:dialog-enter .2s ease-out}
+dialog::backdrop{backdrop-filter:blur(3px);animation:backdrop-enter .2s ease-out}
+::selection{background:#cdece9;color:var(--ink)}
+@media(hover:hover) and (pointer:fine){
+  .card:hover{border-color:#d4e6e9;box-shadow:0 8px 30px #1733450a}
+  button:not(:disabled):not(.text-button):hover,.button:hover{transform:translateY(-1px);box-shadow:0 3px 9px #1733450a}
+  button.primary:not(:disabled):hover,.button.primary:hover{background-image:linear-gradient(125deg,#077d8c,#066c7b);box-shadow:0 5px 14px #07869625}
+  button:not(:disabled):active,.button:active{transform:translateY(0);box-shadow:none}
+  .segmented button:hover,#gallery button:hover{transform:none}
+  #gallery button:not(:disabled):hover{border-color:#9dcdd2}#gallery button:hover img{filter:brightness(1.04)}
+  .document:hover{border-color:#a9d2d6;background:#f6fbfb;transform:translateY(-1px)}
+}
+@keyframes panel-enter{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes message-enter{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:translateY(0)}}
+@keyframes dialog-enter{from{opacity:0;transform:translateY(6px) scale(.99)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes backdrop-enter{from{opacity:0}to{opacity:1}}
+@keyframes typing-dot{0%,65%,100%{opacity:.35;transform:translateY(0)}30%{opacity:1;transform:translateY(-3px)}}
+@keyframes scan-sweep{0%{opacity:0;transform:translateY(-55%)}15%,85%{opacity:1}100%{opacity:0;transform:translateY(55%)}}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+  #viewer.is-scanning::after{display:none}
+}

@@ -104,6 +104,9 @@ function render() {
     $('model').dataset.choices=JSON.stringify(choices);
   }
   const busy=state.job.busy || localBusy;
+  const scanning=busy && (followScan || /quét/i.test(state.job.status)) && state.photos.length>0;
+  $('viewer').classList.toggle('is-scanning',!!scanning);
+  $('viewer').setAttribute('aria-busy',String(!!scanning));
   const admin=!!state.admin?.logged_in && !!adminToken;
   $('admin-button').textContent=admin ? 'Đăng xuất admin' : 'Đăng nhập admin';
   $('admin-button').disabled=busy;
@@ -186,21 +189,30 @@ function render() {
   renderMessages();
 }
 function renderMessages() {
-  const messages=state.chats[mode], key=JSON.stringify([mode,messages,localBusy,state.job.busy,state.job.error,localError,selected,scope()]); if(key===messagesKey) return; messagesKey=key;
+  const messages=state.chats[mode], key=JSON.stringify([mode,messages,localBusy,state.job.busy,state.job.error,localError,selected,scope()]); if(key===messagesKey) return;
+  const previous=messagesKey ? JSON.parse(messagesKey) : null;
+  const current=JSON.parse(key);
+  const sameView=previous && previous[0]===mode && JSON.stringify(previous.slice(-2))===JSON.stringify(current.slice(-2));
+  const newReply=sameView && messages.at(-1)?.role==='assistant' && JSON.stringify(previous[1])!==JSON.stringify(messages);
+  messagesKey=key;
   $('messages').replaceChildren();
   if(!messages.length) { const welcome=text('div','', 'welcome'); welcome.append(text('div','✦','welcome-icon'),text('h3',mode==='general'?'Tôi có thể hỗ trợ gì cho bạn?':'Trao đổi từ kết quả nhận diện'),text('p',mode==='general'?'Hỏi về mụn, thói quen chăm sóc da hoặc tài liệu tham khảo.':'Quét ảnh rồi chọn một ảnh hoặc tất cả ảnh để bắt đầu.'));
     ['Tôi nên chăm sóc da mụn như thế nào?','Khi nào cần gặp bác sĩ da liễu?'].forEach(question=>{ const button=text('button',question,'suggestion'); button.onclick=()=>{ $('question').value=question; $('question').focus(); }; welcome.append(button); }); $('messages').append(welcome); }
-  messages.forEach(message=>{ const bubble=text('div',message.text,`bubble ${message.role}`);
+  messages.forEach((message,index)=>{ const bubble=text('div',message.text,`bubble ${message.role}`);
+    if(newReply && index===messages.length-1) bubble.classList.add('message-enter');
     if(message.sources?.length) { const sources=text('div','Tài liệu đã tham khảo','sources'); message.sources.forEach(source=>{ const button=text('button',`[${source.citation}] ${source.file} · Trang ${source.page}`); button.onclick=()=>showSource(source); sources.append(button); }); bubble.append(sources); } $('messages').append(bubble); });
   if(!state.job.busy && (localError || state.job.error)) $('messages').append(text('div',localError || state.job.error,'bubble error'));
   if(state.job.busy || localBusy) {
     if(pendingQuestion?.mode===mode) $('messages').append(text('div',pendingQuestion.text,'bubble user'));
-    $('messages').append(text('div',state.job.status,'bubble assistant'));
+    const pending=text('div',state.job.status,'bubble pending');
+    const dots=text('span','','typing-dots');dots.setAttribute('aria-hidden','true');
+    for(let i=0;i<3;i++) dots.append(document.createElement('span'));
+    pending.append(dots);$('messages').append(pending);
   } else {
     if(state.job.error && pendingQuestion?.mode===mode && !$('question').value) $('question').value=pendingQuestion.text;
     pendingQuestion=null;
   }
-  $('messages').scrollTop=$('messages').scrollHeight;
+  $('messages').scrollTop=messages.length || state.job.busy || localBusy ? $('messages').scrollHeight : 0;
 }
 async function refresh() { if(polling || localBusy) return; polling=true; try { state=await api('/api/state'); render(); } catch(exc) { error(exc); } finally { polling=false; } }
 async function post(path,data) { try { state=await api(path,data); localError=''; render(); return true; } catch(exc) { error(exc); return false; } }
@@ -288,3 +300,8 @@ $('save-result').onclick=async event=>{
     link.href=output;link.download='anh_nhan_dien.png';link.click();setTimeout(()=>URL.revokeObjectURL(output),5000);
   } catch(exc) {error(exc);} finally {if(objectUrl)URL.revokeObjectURL(objectUrl);}
 };
+
+// Fade the newly decoded photo without changing zoom/pan transforms.
+$('large-image').addEventListener('load',()=>{
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches) $('large-image').animate([{opacity:.35},{opacity:1}],{duration:220,easing:'ease-out'});
+});
