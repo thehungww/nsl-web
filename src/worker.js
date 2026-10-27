@@ -181,7 +181,7 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
   if(!env.DB) return json({error:'Chưa liên kết cơ sở dữ liệu Cloudflare. Chạy npm run setup.'},503);
   let current,cookie='',session;
   try {
-    if(request.method==='GET' && ['/style.css','/app.js','/logo.jpg'].includes(path)) return env.ASSETS.fetch(request);
+    if(request.method==='GET' && ['/style.css','/app.js'].includes(path)) return env.ASSETS.fetch(request);
     if(request.method==='GET' && path==='/document') {
       const file=url.searchParams.get('file');if(!documents.some(d=>d.file===file)) throw new UserError('Không tìm thấy tài liệu.',404);
       const pdf=await env.ASSETS.fetch(new Request(url.origin+'/pdf/'+encodeURIComponent(file)));

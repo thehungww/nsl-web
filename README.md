@@ -1,4 +1,4 @@
-# Ngô Sĩ Liên — Web nhận diện mụn trên Cloudflare
+# AcneCheck — Web nhận diện mụn trên Cloudflare
 
 Bản web chạy bằng Cloudflare Workers, gọi Ultralytics để nhận diện và Gemini để tư vấn. Bản app PC và bản web local được giữ riêng.
 
