@@ -48,7 +48,7 @@ $('admin-form').onsubmit=async event=>{
 };
 function text(tag, content, cls) { const element = document.createElement(tag); element.textContent = content; if(cls) element.className = cls; return element; }
 async function api(path, data) {
-  if(data && ['/api/upload-model','/api/delete-model','/api/remote-key','/api/delete-remote-key','/api/add-remote-model','/api/delete-remote-model','/api/chat-settings','/api/delete-chat-key'].includes(path)) data={...data,admin_token:adminToken};
+  if(data && ['/api/upload-model','/api/delete-model','/api/remote-key','/api/delete-remote-key','/api/add-remote-model','/api/delete-remote-model','/api/chat-settings','/api/delete-chat-key','/api/collection-settings'].includes(path)) data={...data,admin_token:adminToken};
   const wasBusy=localBusy;
   if(data!==undefined) { localBusy=true; if(state) { state.job.status=path==='/api/scan'?'Đang quét các ảnh…':path==='/api/chat'?'Chatbot đang trả lời…':'Đang xử lý…'; render(); } }
   try {
@@ -64,6 +64,7 @@ function resetZoom() { zoom=1; panX=panY=0; transform(); }
 function transform() { $('large-image').style.transform=`translate(${panX}px, ${panY}px) scale(${zoom})`; }
 function render() {
   if(!state) return;
+  window.dispatchEvent(new Event('acne-state'));
   const preferences=savedView();
   if(!restoredView) {
     restoredView=true;

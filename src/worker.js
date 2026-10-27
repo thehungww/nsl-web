@@ -1,10 +1,11 @@
 import { UserError, randomHex, equal, encrypt, decrypt, passwordHash, endpoint } from './security.js';
 import { jpegInfo, parsePrediction, invalidate, imageContext, annotatedSvg } from './core.js';
 import { documents, reply } from './rag.js';
+import { collectionState, configureCollection, recordConsent, collectPhoto, withdrawCollection, cleanupCollection } from './collection.js';
 
 const now = () => Math.floor(Date.now()/1000);
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
-const adminRoutes = new Set(['/api/add-remote-model','/api/delete-remote-model','/api/chat-settings','/api/delete-chat-key']);
+const adminRoutes = new Set(['/api/add-remote-model','/api/delete-remote-model','/api/chat-settings','/api/delete-chat-key','/api/collection-settings']);
 function response(body, type = 'application/json; charset=utf-8', status = 200, headers = {}) {
   return new Response(body,{status,headers:{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Content-Security-Policy':CSP,...headers}});
 }
@@ -52,7 +53,8 @@ async function publicState(env,session,locked=false,persist=true) {
     remote:{models,configured:models.length>0,endpoint:models[0]?.endpoint || ''},
     chat:{configured:!!await setting(env.DB,'chat_key'),model:env.GEMINI_MODEL || 'gemini-3.5-flash-lite'},
     admin:{configured,logged_in:session.admin_until>now(),requires_setup_token:true},
-    photos:session.photos.map(p=>({id:p.id,name:p.name,width:p.width,height:p.height,error:p.error || '',revision:p.revision,scanned:!!p.result,...(p.result || {})})),
+    photos:session.photos.map(p=>({id:p.id,name:p.name,width:p.width,height:p.height,error:p.error || '',revision:p.revision,scanned:!!p.result,collection_status:p.collection_status || '',...(p.result || {})})),
+    collection:await collectionState(env,session),
     chats:session.chats,job:{busy:locked,status:session.status,error:session.error || ''}};
 }
 async function rate(env,key,max,seconds=60) {
@@ -85,6 +87,29 @@ async function predict(env,record,photo,data,confidence,fetcher) {
 }
 async function mutate(path,body,env,session,request,fetcher) {
   if(adminRoutes.has(path)) requireAdmin(session,body);
+  if(path==='/api/collection-settings') {
+    await configureCollection(env,body,fetcher);session.status=body.enabled?'Đã bật đóng góp ảnh tự nguyện.':'Đã tắt thu ảnh đóng góp.';return;
+  }
+  if(path==='/api/collection-consent') {
+    await rate(env,'consent:'+session.id,6);await rate(env,'consent:global',120,3600);
+    const code=await recordConsent(env,session,body);
+    session.status=code?'Chỉ ảnh thêm từ bây giờ mới được gửi đóng góp. Hãy lưu mã xóa ảnh.':'Bạn vẫn dùng web bình thường và không đóng góp thêm ảnh.';
+    return code?{collection_receipt:code}:undefined;
+  }
+  if(path==='/api/collection-withdraw') {
+    await rate(env,'withdraw:'+session.id,6);
+    const result=await withdrawCollection(env,session,body,fetcher);
+    session.status='Đã rút lại đồng ý và xóa ảnh đóng góp trên Drive. Ảnh trong phiên nhận diện không bị thay đổi.';
+    return {collection_withdrawal:result};
+  }
+  if(path==='/api/collection-retry') {
+    const photo=session.photos.find(p=>p.id===body.id);if(!photo) throw new UserError('Ảnh không thuộc phiên này.',404);
+    if(!(await collectionState(env,session)).accepted || photo.donation_receipt!==session.collection?.receipt_hash) throw new UserError('Ảnh này chưa có đồng ý đóng góp hợp lệ.',403);
+    await rate(env,'donation:'+session.id,12);await rate(env,'donation:global',60);
+    const row=await env.DB.prepare('SELECT data FROM photos WHERE id=? AND session_id=?').bind(photo.id,session.id).first();
+    if(!row) throw new UserError('Ảnh đã hết hạn.',404);
+    await collectPhoto(env,session,photo,await decrypt(row.data,env.APP_SECRET),fetcher);return;
+  }
   if(path==='/api/admin-logout') { session.admin_until=0;session.admin_token='';return; }
   if(path==='/api/admin-setup') {
     if(!env.ADMIN_SETUP_TOKEN || !equal(body.setup_token,env.ADMIN_SETUP_TOKEN)) throw new UserError('Cần mã thiết lập riêng của chủ web để tạo admin.',403);
@@ -128,7 +153,14 @@ async function mutate(path,body,env,session,request,fetcher) {
     const {width,height}=jpegInfo(body.data),id=randomHex(12);
     const name=typeof body.name==='string'?body.name.slice(0,250):'Ảnh.jpg';
     await env.DB.prepare('INSERT INTO photos(id,session_id,data) VALUES(?,?,?)').bind(id,session.id,await encrypt(body.data,env.APP_SECRET)).run();
-    session.photos.push({id,name,width,height,revision:0,error:''});session.chats.image=[];session.image_context=null;session.status='Ảnh đã sẵn sàng để quét.';return;
+    const photo={id,name,width,height,revision:0,error:''};
+    if(session.collection?.decision==='accepted') photo.donation_receipt=session.collection.receipt_hash;
+    session.photos.push(photo);session.chats.image=[];session.image_context=null;session.status='Ảnh đã sẵn sàng để quét.';
+    if(photo.donation_receipt) {
+      try {await rate(env,'donation:'+session.id,12);await rate(env,'donation:global',60);await collectPhoto(env,session,photo,body.data,fetcher);}
+      catch {photo.collection_status='failed';}
+    }
+    return;
   }
   if(path==='/api/remove-photo') {
     await env.DB.prepare('DELETE FROM photos WHERE id=? AND session_id=?').bind(String(body.id || ''),session.id).run();
@@ -181,7 +213,7 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
   if(!env.DB) return json({error:'Chưa liên kết cơ sở dữ liệu Cloudflare. Chạy npm run setup.'},503);
   let current,cookie='',session;
   try {
-    if(request.method==='GET' && ['/style.css','/app.js'].includes(path)) return env.ASSETS.fetch(request);
+    if(request.method==='GET' && ['/style.css','/app.js','/collection.js'].includes(path)) return env.ASSETS.fetch(request);
     if(request.method==='GET' && path==='/document') {
       const file=url.searchParams.get('file');if(!documents.some(d=>d.file===file)) throw new UserError('Không tìm thấy tài liệu.',404);
       const pdf=await env.ASSETS.fetch(new Request(url.origin+'/pdf/'+encodeURIComponent(file)));
@@ -214,8 +246,9 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
       // Re-read after acquiring the lock so concurrent logout/edits cannot use stale privileges.
       session=JSON.parse((await env.DB.prepare('SELECT data FROM sessions WHERE id=?').bind(session.id).first()).data);
       session.error='';
-      await mutate(path,body,env,session,request,fetcher);
+      const extra=await mutate(path,body,env,session,request,fetcher);
       const result=await publicState(env,session,false,false);
+      if(extra) Object.assign(result,extra);
       await save(env,session);
       if(path==='/api/admin-login') result.admin_token=session.admin_token;
       return json(result,200,headers);
@@ -230,5 +263,6 @@ export default {
   fetch:handle,
   async scheduled(event,env,ctx) {
     await env.DB.batch([env.DB.prepare('DELETE FROM sessions WHERE expires < ?').bind(now()),env.DB.prepare('DELETE FROM rates WHERE expires < ?').bind(now())]);
+    await cleanupCollection(env);
   }
 };

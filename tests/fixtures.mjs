@@ -9,6 +9,7 @@ const secret='a'.repeat(64), setupToken='b'.repeat(48), base='https://nsl.exampl
 const jpeg=readFileSync(new URL('fixture.jpg',import.meta.url)).toString('base64');
 function sqlite() {
   const raw=new DatabaseSync(':memory:');raw.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));
+  raw.exec(readFileSync(new URL('../migrations/0002_image_consent.sql',import.meta.url),'utf8'));
   return {raw,prepare(sql){let params=[];const statement=()=>raw.prepare(sql);return {
     bind(...args){params=args;return this;}, async first(){return statement().get(...params)||null;},
     async all(){return {results:statement().all(...params)};},async run(){const r=statement().run(...params);return {meta:{changes:Number(r.changes)}};}
