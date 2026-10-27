@@ -4,6 +4,8 @@
 
 Web có bảng xin phép riêng cho việc lưu ảnh phục vụ đánh giá/gán nhãn/huấn luyện mô hình. Mặc định tắt; từ chối vẫn sử dụng được nhận diện và chatbot. Chỉ ảnh thêm sau đồng ý mới được gửi. Có mã rút lại/xóa, giới hạn tự xác nhận từ 18 tuổi, thời hạn 90 ngày và lịch dọn ảnh. Không thu chat, IP hay tên tệp gốc vào kho ảnh.
 
+Bảng thông tin tự mở mỗi lần vào hoặc tải lại trang, kể cả lúc chưa kết nối Drive. Đóng bảng hoặc tải lại không tự đồng ý và không thay đổi trạng thái đã lưu. Khi thu ảnh chưa bật, nút đồng ý vẫn bị vô hiệu hóa.
+
 Chủ web thiết lập theo [hướng dẫn Google Drive](google-drive/HUONG_DAN.md). Chạy `setupCollection` sẽ tự tạo thư mục riêng tư; không cần tạo thư mục trước. Chưa kết nối và chạy thử Drive thật thì không được coi là đã hoàn tất xác minh lưu/xóa thực tế. Kiểm thử tự động dùng Drive và ảnh giả lập. Không bật thu ảnh cho người dùng thật trước khi kiểm tra lưu, rút lại và lịch dọn bằng ảnh tổng hợp.
 
 Phải áp dụng migration `0002_image_consent.sql` trước khi triển khai Worker mới. Chỉ admin được lưu kết nối; mã kết nối mã hóa trong D1, không trả về state. Các lượt đồng ý giữ kết nối gốc để vẫn xóa được khi tắt thu ảnh. Frontend Cloudflare có mã riêng tại `public/`; script xuất từ Python giữ các tài nguyên này để không ghi đè luồng đồng ý.

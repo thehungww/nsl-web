@@ -16,6 +16,7 @@ with sync_playwright() as playwright:
     errors = []
     page.on("pageerror", lambda error: errors.append(str(error)))
     page.goto(url, wait_until="networkidle")
+    expect(page.locator("#collection-dialog")).to_be_visible();page.locator("#close-collection").click()
     expect(page.locator("#remote-model option")).to_have_count(3)
     state = page.request.get(url + "/api/state").json()
     assert state["chat"]["configured"] and len(state["remote"]["models"]) == 2

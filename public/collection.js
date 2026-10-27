@@ -17,6 +17,7 @@
     $('collection-code').value=$('collection-code').value || savedCodes().at(-1) || '';
   }
   function show() {
+    prompted=true;
     $('collection-adult').checked=false;$('collection-own').checked=false;$('collection-agree').checked=false;
     $('collection-feedback').textContent='';populate();
     if(!$('collection-dialog').open)$('collection-dialog').showModal();
@@ -33,7 +34,9 @@
     $('collection-retry').classList.toggle('hidden',!c?.accepted || !failed);
     $('collection-retry').disabled=working || localBusy || !!state?.job?.busy;
     if($('collection-dialog').open)populate();
-    if(c?.available && !c.decision && !prompted && !localBusy && !state.job.busy) {prompted=true;show();}
+    // Inform on every page visit, including when Drive is not connected. Opening
+    // this notice never changes consent or enables image collection.
+    if(c && !prompted && !localBusy && !state.job.busy) show();
   }
   async function perform(path,body,feedback) {
     working=true;populate();

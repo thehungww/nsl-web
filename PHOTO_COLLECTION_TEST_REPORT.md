@@ -4,7 +4,7 @@
 
 - 71/71 kiểm thử Node, gồm 15 tình huống mới cho thu ảnh, Google Apps Script và quyền riêng tư.
 - 18/18 bước giao diện Cloudflare cũ đạt sau thay đổi.
-- 12/12 bước giao diện mới đạt: mặc định tắt, admin cấu hình, bảng xin phép, không tích sẵn, từ chối vẫn thêm ảnh, chỉ thu ảnh mới, tải mã xóa, rút lại ở trình duyệt khác và bố cục di động.
+- 12/12 bước giao diện mới đạt: bảng tự mở khi vào trang dù thu ảnh đang tắt, admin cấu hình, không tích sẵn, từ chối vẫn thêm ảnh, mở lại khi tải trang mà không đổi đồng ý, chỉ thu ảnh mới, tải mã xóa, rút lại ở trình duyệt khác và bố cục di động.
 - Đóng gói Worker bằng Wrangler dry-run thành công. Ảnh thử là ảnh trắng tổng hợp; Drive và AI trong máy chủ thử được giả lập.
 
 ## Các trường hợp quan trọng
