@@ -1,35 +1,37 @@
-# Kiểm thử đóng góp ảnh tự nguyện — 28/10/2026
+# Kiểm thử kho ảnh đóng góp trên web — 28/10/2026
 
-## Kết quả đã xác nhận
+## Kết quả
 
-- 71/71 kiểm thử Node, gồm 15 tình huống mới cho thu ảnh, Google Apps Script và quyền riêng tư.
-- 18/18 bước giao diện Cloudflare cũ đạt sau thay đổi.
-- 12/12 bước giao diện mới đạt: bảng tự mở khi vào trang dù thu ảnh đang tắt, admin cấu hình, không tích sẵn, từ chối vẫn thêm ảnh, mở lại khi tải trang mà không đổi đồng ý, chỉ thu ảnh mới, tải mã xóa, rút lại ở trình duyệt khác và bố cục di động.
-- Đóng gói Worker bằng Wrangler dry-run thành công. Ảnh thử là ảnh trắng tổng hợp; Drive và AI trong máy chủ thử được giả lập.
+- 75/75 kiểm thử Node đạt, gồm 19 tình huống cho lưu ảnh trực tiếp, quyền riêng tư và kho admin.
+- 18/18 bước hồi quy giao diện Cloudflare đạt.
+- 14/14 bước giao diện kho ảnh đạt: từ chối/đồng ý, kiểm tra ảnh không đồng ý vắng mặt, xem ảnh lớn, JPEG hợp lệ, ZIP hợp lệ có metadata, xóa ảnh đã chọn, rút lại ở trình duyệt khác, giao diện di động và đóng kho khi đăng xuất.
+- Wrangler dry-run thành công. Kiểm tra giao diện không có lỗi JavaScript.
 
-## Các trường hợp quan trọng
+Cơ sở dữ liệu kiểm thử là SQLite thật trong bộ nhớ, thực thi các migration và trigger của ứng dụng. Batch chạy nguyên tử với rollback; ảnh là JPEG tổng hợp màu trắng. Dịch vụ nhận diện và chatbot dùng phản hồi giả lập trong bộ trình duyệt. Không dùng ảnh người bệnh hoặc thay đổi tài khoản admin thật để thử quyền quản trị.
 
-| Trường hợp | Kết quả mong đợi / kết quả đã kiểm tra |
+## Những hành vi được kiểm tra
+
+| Tình huống | Kết quả |
 |---|---|
-| Chưa cấu hình, chưa đồng ý hoặc đã từ chối | Không gọi Drive khi thêm ảnh; chức năng nhận diện vẫn nhận ảnh |
-| Người thường hoặc thiếu token admin thay kết nối | Từ chối 403 |
-| Thiếu xác nhận quyền ảnh/chính sách hiện tại | Không tạo đồng ý |
-| Ảnh được thêm trước đồng ý | Không thu ngược, không cho retry để vượt điều kiện |
-| Ảnh thêm sau đồng ý | Có bản ghi thời gian, chính sách, hạn 90 ngày và tên ngẫu nhiên |
-| Metadata EXIF/APP thông thường | Loại khỏi bản đóng góp; không gửi tên gốc/chat |
-| Drive lỗi lúc gửi | Giữ ảnh trong phiên nhận diện, báo chưa xác nhận lưu |
-| Thử lại cùng ảnh | Dùng cùng mã, không tạo thêm bản sau khi đã gửi thành công |
-| Phiên khác thao tác ảnh riêng | Từ chối; không kế thừa đồng ý |
-| Mã xóa sau khi phiên hết hạn | Vẫn yêu cầu xóa được qua bản ghi đồng ý độc lập |
-| Xóa gặp lỗi | Dừng thu thêm trước, chỉ báo xóa thành công sau khi xác nhận; cron thử lại |
-| Yêu cầu cũ đến sau khi rút lại | Script giữ dấu rút lại, không nhận lại ảnh |
-| Hết hạn lưu | Ngừng gửi; tác vụ dọn xóa ảnh bằng Drive API |
-| URL/redirect ngoài Google được phép | Từ chối, không chuyển tiếp khóa/ảnh |
+| Không đồng ý hoặc từ chối | Ảnh vẫn dùng nhận diện, không vào kho đóng góp |
+| Đồng ý sau khi đã thêm ảnh | Chỉ ảnh thêm tiếp theo được lưu; không thu ngược |
+| Không có trường tuổi hoặc khóa lưu trữ ngoài | Đồng ý hợp lệ vẫn lưu được ảnh |
+| Lưu trữ và dữ liệu công khai | Dữ liệu ảnh mã hóa; state/list không lộ ảnh gốc hoặc mã xóa |
+| Khách hoặc chỉ có cookie admin | Không được list, tải ảnh, cấu hình hay xóa |
+| Đăng nhập đúng token admin | Tải JPEG và xem kho được; đăng xuất chặn truy cập |
+| Phiên duyệt hết hạn | Bản đóng góp vẫn tồn tại, admin mới đăng nhập vẫn thấy |
+| Admin xóa ảnh rồi người gửi thử lại | Ảnh đã xóa không bị tạo lại |
+| Rút lại bằng mã từ trình duyệt khác | Xóa đúng nhóm ảnh; không ảnh hưởng người khác |
+| Xóa trong lúc ghi ảnh đang chờ | Không khôi phục ảnh sau khi rút lại |
+| Lỗi cơ sở dữ liệu giữa giao dịch rút lại | Rollback cả trạng thái và ảnh, không báo xóa thành công giả |
+| Ảnh hết hạn | Không tải được dù cron chưa chạy; cleanup xóa dữ liệu |
+| Kho đầy | Giữ ảnh nhận diện, đánh dấu đóng góp chưa lưu; xóa để giải phóng rồi thử lại được |
+| Nhiều lượt cùng đạt ngưỡng số ảnh | SQL nguyên tử không vượt 500 ảnh |
+| Xóa nhiều ảnh hoặc tham số sai | Chỉ nhận tối đa 24 ID hợp lệ, chống chuỗi SQL giả |
+| Địa chỉ ngoài hoặc trình duyệt khác | Không gọi dịch vụ lưu trữ ngoài; quyền ảnh theo token admin |
 
-Mã Apps Script thật trong `google-drive/Code.gs` được thực thi bằng Node VM với các dịch vụ Google giả lập để kiểm tra logic chống trùng, xác thực, xóa vĩnh viễn và từ chối ảnh đến muộn. Đây không phải thử trên Google Drive thật.
+## Giới hạn đánh giá
 
-## Phần cần chủ tài khoản Google hoàn tất
+Bộ thử không phải đánh giá độ chính xác mụn hoặc khả năng chịu tải AI. Chưa stress test kho 100 MB trên Cloudflare thật, chưa đo thời gian tải ZIP lớn trên điện thoại thật và chưa kiểm toán bảo mật độc lập. Giới hạn 100 MiB/500 ảnh là cấu hình an toàn của ứng dụng, không phải benchmark lưu trữ. Ảnh do admin tải về và bản sao lưu hạ tầng có vòng đời riêng; tác vụ xóa kiểm soát kho dữ liệu đang hoạt động.
 
-Chưa có thư mục, Apps Script deployment hoặc quyền Google của chủ web. Không thu ảnh thật và chưa kiểm thử đường truyền, cấp quyền OAuth, quota Google, lịch kích hoạt hoặc xóa thực tế. Làm theo `google-drive/HUONG_DAN.md`, chạy thử lưu/xóa bằng ảnh tổng hợp trước khi bật mời người dùng đóng góp. Tính năng trên web mặc định tắt cho đến khi admin kiểm tra và lưu kết nối hợp lệ.
-
-Việc thu ảnh không tự huấn luyện mô hình và chưa chứng minh tăng độ chính xác. Chủ hệ thống phải kiểm tra nhãn, xử lý các bản sao dữ liệu bên ngoài thư mục do script quản lý và theo dõi lỗi lịch dọn ảnh. App PC và web Python local không bị bật thu ảnh.
+App PC và web Python local không thay đổi tính năng thu ảnh. Web Cloudflare bỏ kết nối Google Drive; người gửi vẫn phải đồng ý rõ ràng theo thông tin lưu trên máy chủ web. Ảnh thu được cần kiểm tra, gán nhãn và huấn luyện/đánh giá riêng.

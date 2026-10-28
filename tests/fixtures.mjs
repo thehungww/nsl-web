@@ -10,10 +10,11 @@ const jpeg=readFileSync(new URL('fixture.jpg',import.meta.url)).toString('base64
 function sqlite() {
   const raw=new DatabaseSync(':memory:');raw.exec(readFileSync(new URL('../migrations/0001_initial.sql',import.meta.url),'utf8'));
   raw.exec(readFileSync(new URL('../migrations/0002_image_consent.sql',import.meta.url),'utf8'));
+  raw.exec(readFileSync(new URL('../migrations/0003_web_photo_library.sql',import.meta.url),'utf8'));
   return {raw,prepare(sql){let params=[];const statement=()=>raw.prepare(sql);return {
     bind(...args){params=args;return this;}, async first(){return statement().get(...params)||null;},
-    async all(){return {results:statement().all(...params)};},async run(){const r=statement().run(...params);return {meta:{changes:Number(r.changes)}};}
-  };},async batch(statements){return Promise.all(statements.map(s=>s.run()));}};
+    async all(){return {results:statement().all(...params)};},runSync(){const r=statement().run(...params);return {meta:{changes:Number(r.changes)}};},async run(){return this.runSync();}
+  };},async batch(statements){raw.exec('BEGIN');try{const result=statements.map(s=>s.runSync());raw.exec('COMMIT');return result;}catch(error){raw.exec('ROLLBACK');throw error;}}};
 }
 function environment() {
   return {DB:sqlite(),APP_SECRET:secret,ADMIN_SETUP_TOKEN:setupToken,RAG:{query:async()=>({matches:[{id:corpus.chunks[0].id,score:.9}]})},ASSETS:{fetch:async request=>{

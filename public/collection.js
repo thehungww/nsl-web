@@ -3,6 +3,7 @@
 (() => {
   let prompted=false,working=false;
   const receiptKey='acne-photo-withdrawal-v1';
+  const disclosedPolicy=document.querySelector('meta[name="collection-policy"]').content;
   function savedCodes() {try{return JSON.parse(localStorage.getItem(receiptKey)) || [];}catch{return [];}}
   function saveCode(code) {try {localStorage.setItem(receiptKey,JSON.stringify([...savedCodes().filter(x=>x!==code),code].slice(-20)));}catch{}}
   function removeCode(code) {try {localStorage.setItem(receiptKey,JSON.stringify(savedCodes().filter(x=>x!==code)));}catch{}}
@@ -11,7 +12,8 @@
     $('collection-controller').textContent=c.controller || 'Chưa có thông tin đơn vị quản lý';
     $('collection-contact').textContent=c.contact || 'Chưa cấu hình liên hệ';
     $('collection-availability').textContent=!c.available?'Thu ảnh đóng góp hiện chưa bật. Bạn vẫn dùng web bình thường.':c.accepted?'Bạn đã đồng ý. Chỉ ảnh thêm sau lúc đồng ý mới được gửi.':c.revoked?'Đã dừng đóng góp. Bạn có thể gửi lại yêu cầu xóa bằng mã nếu lần trước chưa hoàn tất.':'Hoàn toàn tự nguyện. Từ chối không ảnh hưởng chức năng nhận diện và chatbot.';
-    $('collection-accept').disabled=working || !c.available || c.accepted || !$('collection-own').checked || !$('collection-agree').checked;
+    if(c.policy_version!==disclosedPolicy)$('collection-availability').textContent='Thông tin lưu ảnh đã cập nhật. Tải lại trang để đọc và lựa chọn.';
+    $('collection-accept').disabled=working || !c.available || c.accepted || c.policy_version!==disclosedPolicy || !$('collection-own').checked || !$('collection-agree').checked;
     $('collection-decline').disabled=working;
     $('collection-withdraw').disabled=working;
     $('collection-code').value=$('collection-code').value || savedCodes().at(-1) || '';
@@ -30,11 +32,11 @@
     $('collection-settings').disabled=!!state?.job?.busy || localBusy;
     const sent=state?.photos?.filter(p=>p.collection_status==='sent').length || 0;
     const failed=state?.photos?.filter(p=>p.collection_status==='failed').length || 0;
-    $('collection-photo-status').textContent=c?.accepted?`Đóng góp: ${sent} ảnh đã lưu vào Drive.${failed?' '+failed+' ảnh chưa xác nhận lưu; có thể thử gửi lại.':''}`:'';
+    $('collection-photo-status').textContent=c?.accepted?`Đóng góp: ${sent} ảnh đã lưu trong kho website.${failed?' '+failed+' ảnh chưa xác nhận lưu; có thể thử gửi lại.':''}`:'';
     $('collection-retry').classList.toggle('hidden',!c?.accepted || !failed);
     $('collection-retry').disabled=working || localBusy || !!state?.job?.busy;
     if($('collection-dialog').open)populate();
-    // Inform on every page visit, including when Drive is not connected. Opening
+    // Inform on every page visit, without requiring an external storage connection. Opening
     // this notice never changes consent or enables image collection.
     if(c && !prompted && !localBusy && !state.job.busy) show();
   }
@@ -58,7 +60,7 @@
   $('close-collection').onclick=()=>$('collection-dialog').close();
   for(const id of ['collection-own','collection-agree'])$(id).onchange=populate;
   $('collection-accept').onclick=async()=>{
-    const result=await perform('/api/collection-consent',{accepted:true,self_image:$('collection-own').checked,policy_version:state.collection.policy_version},'collection-feedback');
+    const result=await perform('/api/collection-consent',{accepted:true,self_image:$('collection-own').checked,policy_version:disclosedPolicy,storage:'web'},'collection-feedback');
     if(result)$('collection-feedback').textContent='Đã đồng ý. Hãy lưu mã xóa ảnh bên dưới, rồi đóng bảng để tiếp tục. Ảnh đã thêm trước đó không được gửi.';
   };
   $('collection-decline').onclick=async()=>{
@@ -69,7 +71,7 @@
     if(!code && !state.collection?.accepted && !state.collection?.revoked){$('collection-feedback').textContent='Nhập mã xóa ảnh đã nhận khi đồng ý.';return;}
     if(await perform('/api/collection-withdraw',{code},'collection-feedback')) {
       removeCode(code);$('collection-receipt-panel').classList.add('hidden');
-      $('collection-feedback').textContent='Đã dừng đóng góp và xác nhận xóa ảnh trên Drive. Lựa chọn này không xóa ảnh đang dùng trong phiên nhận diện.';
+      $('collection-feedback').textContent='Đã dừng đóng góp và xác nhận xóa ảnh trong kho. Lựa chọn này không xóa ảnh đang dùng trong phiên nhận diện.';
     }
   };
   $('collection-download-code').onclick=()=>{
@@ -83,18 +85,16 @@
   };
   $('collection-settings').onclick=()=>{
     $('collection-enabled').checked=!!state.collection.available;
-    $('collection-url').value=state.collection.endpoint || '';
     $('collection-manager').value=state.collection.controller || '';
     $('collection-manager-contact').value=state.collection.contact || '';
-    $('collection-secret').value='';$('collection-settings-feedback').textContent='';
+    $('collection-settings-feedback').textContent='';
     $('collection-settings-dialog').showModal();
   };
   $('close-collection-settings').onclick=()=>$('collection-settings-dialog').close();
-  $('collection-settings-dialog').addEventListener('close',()=>{$('collection-secret').value='';});
   $('collection-settings-form').onsubmit=async event=>{
     event.preventDefault();event.submitter.disabled=true;
     try {
-      const result=await perform('/api/collection-settings',{enabled:$('collection-enabled').checked,url:$('collection-url').value.trim(),secret:$('collection-secret').value.trim(),controller:$('collection-manager').value,contact:$('collection-manager-contact').value},'collection-settings-feedback');
+      const result=await perform('/api/collection-settings',{enabled:$('collection-enabled').checked,controller:$('collection-manager').value,contact:$('collection-manager-contact').value},'collection-settings-feedback');
       if(result)$('collection-settings-dialog').close();
     }finally{event.submitter.disabled=false;}
   };

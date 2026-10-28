@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="vi">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="acne-token" content="__TOKEN__"><title>Nhận diện mụn · Hỗ trợ da liễu</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script><script src="/collection.js" defer></script></head>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="acne-token" content="__TOKEN__"><meta name="collection-policy" content="2026-10-28-web-v3"><title>Nhận diện mụn · Hỗ trợ da liễu</title><link rel="icon" href="data:,"><link rel="stylesheet" href="/style.css"><script src="/app.js" defer></script><script src="/collection.js" defer></script><script src="/library.js" defer></script></head>
 <body>
-<header><div class="brand"><div><h1>NHẬN DIỆN MỤN QUA HÌNH ẢNH</h1></div></div><div class="header-actions"><span class="local-pill"><i></i> Web trực tuyến</span><button id="documents-button">Tài liệu tham khảo ↗</button></div></header>
+<header><div class="brand"><div><h1>NHẬN DIỆN MỤN QUA HÌNH ẢNH</h1></div></div><div class="header-actions"><button id="collection-library-button" class="hidden">Kho ảnh đóng góp</button><span class="local-pill"><i></i> Web trực tuyến</span><button id="documents-button">Tài liệu tham khảo ↗</button></div></header>
 <main>
 <aside class="card controls">
 <div class="section-label">01 <span>MÔ HÌNH NHẬN DIỆN</span></div>
@@ -56,8 +56,8 @@
 <div class="collection-policy">
 <p><strong>Mục đích:</strong> lưu ảnh, đánh giá, gán nhãn và huấn luyện mô hình nhận diện mụn. Đóng góp không tự động huấn luyện mô hình ngay.</p>
 <p><strong>Dữ liệu:</strong> chỉ ảnh JPEG bạn thêm/chụp <strong>sau khi đồng ý</strong>, cùng thời điểm và bằng chứng đồng ý. Không gửi đoạn chat hoặc tên tệp gốc vào kho ảnh. Ảnh có thể nhận diện khuôn mặt; đây không phải dữ liệu ẩn danh.</p>
-<p><strong>Nơi lưu và người quản lý:</strong> Google Drive riêng tư của <span id="collection-controller"></span>. Chủ ứng dụng xử lý ảnh để cải thiện mô hình; không công khai ảnh. Liên hệ: <span id="collection-contact"></span>.</p>
-<p><strong>Thời gian:</strong> 90 ngày, có tác vụ dọn ảnh hằng giờ. Bạn được cấp mã để rút lại đồng ý và yêu cầu xóa bản ảnh trên Drive. Nếu lỗi kết nối, hệ thống dừng thu thêm và thử xóa lại; chỉ thông báo đã xóa sau khi xác nhận.</p>
+<p><strong>Nơi lưu và người quản lý:</strong> Kho ảnh riêng trên máy chủ website, do <span id="collection-controller"></span>. Chủ ứng dụng xử lý ảnh để cải thiện mô hình; không công khai ảnh. Liên hệ: <span id="collection-contact"></span>.</p>
+<p><strong>Thời gian:</strong> 90 ngày, có tác vụ dọn ảnh hằng giờ. Bạn được cấp mã để rút lại đồng ý và yêu cầu xóa bản ảnh trong kho đóng góp. Ảnh được lưu riêng với phiên nhận diện, chỉ admin được xem, tải hoặc xóa. Xóa khỏi kho sử dụng; ảnh đã tải xuống và bản sao lưu của máy chủ được xử lý theo vòng đời riêng.</p>
 <p><strong>Giới hạn:</strong> việc xóa bản ảnh không tự đảo ngược ảnh hưởng nếu ảnh đã được dùng huấn luyện. Chủ ứng dụng phải xử lý cả các bản sao dữ liệu đã tạo.</p>
 <p><strong>Nếu từ chối:</strong> vẫn dùng web bình thường. Ảnh dùng để nhận diện vẫn được xử lý qua dịch vụ Ultralytics và lưu tạm theo phiên; lựa chọn ở đây chỉ dành cho kho ảnh cải thiện mô hình.</p>
 </div>
@@ -66,9 +66,19 @@
 <p id="collection-feedback" class="help" role="status"></p>
 <div class="dialog-footer collection-actions"><button id="collection-decline">Tiếp tục không đóng góp</button><button id="collection-accept" class="primary" disabled>Đồng ý đóng góp ảnh mới</button></div>
 <section id="collection-receipt-panel" class="hidden collection-receipt"><strong>Lưu mã để có thể xóa ảnh sau này</strong><code id="collection-receipt"></code><button id="collection-download-code">Tải mã xóa ảnh</button><p class="help">Mã được lưu trên trình duyệt này nếu có thể. Giữ bản tải xuống nếu bạn đổi máy hoặc xóa dữ liệu trình duyệt; không chia sẻ mã.</p></section>
-<details class="collection-withdrawal"><summary>Rút lại đồng ý / xóa ảnh đã đóng góp</summary><label for="collection-code">Mã xóa ảnh đã nhận (để trống nếu rút lại trong phiên hiện tại)</label><input id="collection-code" type="password" maxlength="48" autocomplete="off"><button id="collection-withdraw" class="danger">Dừng đóng góp và xóa ảnh trên Drive</button></details>
+<details class="collection-withdrawal"><summary>Rút lại đồng ý / xóa ảnh đã đóng góp</summary><label for="collection-code">Mã xóa ảnh đã nhận (để trống nếu rút lại trong phiên hiện tại)</label><input id="collection-code" type="password" maxlength="48" autocomplete="off"><button id="collection-withdraw" class="danger">Dừng đóng góp và xóa ảnh trong kho</button></details>
 </dialog>
-<dialog id="collection-settings-dialog" aria-labelledby="collection-settings-title"><div class="dialog-heading"><h2 id="collection-settings-title">Kho ảnh đóng góp Google Drive</h2><button id="close-collection-settings" class="square" aria-label="Đóng quản lý thu ảnh">×</button></div>
-<p class="help">Chỉ admin được cấu hình. Thu ảnh mặc định tắt. Chạy bộ thiết lập Google Apps Script để tự tạo thư mục riêng tư và mã kết nối.</p>
-<form id="collection-settings-form"><label class="consent-check"><input id="collection-enabled" type="checkbox"> Bật mời đóng góp ảnh tự nguyện</label><label for="collection-manager">Tên người / đơn vị chịu trách nhiệm</label><input id="collection-manager" maxlength="120"><label for="collection-manager-contact">Email hoặc kênh liên hệ về dữ liệu</label><input id="collection-manager-contact" maxlength="200"><label for="collection-url">URL triển khai Google Apps Script</label><input id="collection-url" type="url" placeholder="https://script.google.com/macros/s/…/exec"><label for="collection-secret">Mã kết nối riêng</label><input id="collection-secret" type="password" autocomplete="off" maxlength="160" placeholder="Để trống để giữ mã hiện tại"><p class="help">Máy chủ kiểm tra kết nối và thư mục riêng tư trước khi bật. Khi tắt, người đã đóng góp vẫn có thể dùng mã yêu cầu xóa.</p><p id="collection-settings-feedback" class="help" role="status"></p><div class="dialog-footer"><button type="submit" class="primary">Kiểm tra và lưu</button></div></form></dialog>
+<dialog id="collection-settings-dialog" aria-labelledby="collection-settings-title"><div class="dialog-heading"><h2 id="collection-settings-title">Cài đặt thu ảnh đóng góp</h2><button id="close-collection-settings" class="square" aria-label="Đóng quản lý thu ảnh">×</button></div>
+<p class="help">Ảnh lưu trực tiếp trong kho riêng của website, không cần kết nối dịch vụ ngoài. Chỉ lưu ảnh mới sau khi người dùng chủ động đồng ý.</p>
+<form id="collection-settings-form"><label class="consent-check"><input id="collection-enabled" type="checkbox"> Bật mời đóng góp ảnh tự nguyện</label><label for="collection-manager">Tên người / đơn vị chịu trách nhiệm</label><input id="collection-manager" maxlength="120"><label for="collection-manager-contact">Email hoặc kênh liên hệ về dữ liệu</label><input id="collection-manager-contact" maxlength="200"><p class="help">Bạn có thể tắt nhận ảnh mới bất cứ lúc nào. Người đã đóng góp vẫn dùng mã yêu cầu xóa được.</p><p id="collection-settings-feedback" class="help" role="status"></p><div class="dialog-footer"><button type="submit" class="primary">Lưu cài đặt</button></div></form></dialog>
+
+<dialog id="collection-library-dialog" aria-labelledby="collection-library-title">
+<div class="dialog-heading"><div><p class="eyebrow">CHỈ QUẢN TRỊ VIÊN</p><h2 id="collection-library-title">Kho ảnh đóng góp</h2></div><button id="close-collection-library" class="square" aria-label="Đóng kho ảnh">×</button></div>
+<p class="help">Ảnh được lưu sau khi người dùng đồng ý, giữ tối đa 90 ngày. Tải về để kiểm tra và gán nhãn trước khi huấn luyện. Bản tải xuống cần được quản lý riêng khi người gửi yêu cầu xóa.</p>
+<p id="collection-library-stats" class="library-stats" role="status"></p>
+<div class="library-toolbar"><label class="consent-check"><input id="collection-select-all" type="checkbox"> Chọn cả trang</label><button id="collection-refresh">Làm mới</button><button id="collection-zip">Tải trang này (.zip)</button><button id="collection-delete-selected" class="danger" disabled>Xóa ảnh đã chọn</button></div>
+<p id="collection-library-feedback" class="help" role="status"></p><div id="collection-library-grid" class="library-grid"></div>
+<div class="library-pagination"><button id="collection-prev">← Trang trước</button><span id="collection-page-label"></span><button id="collection-next">Trang sau →</button></div>
+</dialog>
+<dialog id="collection-preview-dialog" aria-labelledby="collection-preview-title"><div class="dialog-heading"><h2 id="collection-preview-title">Ảnh đóng góp</h2><button id="close-collection-preview" class="square" aria-label="Đóng ảnh đóng góp">×</button></div><img id="collection-preview" alt="Ảnh đóng góp đang xem"></dialog>
 </body></html>

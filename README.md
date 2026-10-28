@@ -1,14 +1,18 @@
 # AcneCheck — Web nhận diện mụn trên Cloudflare
 
-## Ảnh đóng góp tự nguyện
+## Kho ảnh đóng góp trên web
 
-Web có bảng xin phép riêng cho việc lưu ảnh phục vụ đánh giá/gán nhãn/huấn luyện mô hình. Mặc định tắt; từ chối vẫn sử dụng được nhận diện và chatbot. Chỉ ảnh thêm sau đồng ý mới được gửi. Có mã rút lại/xóa, thời hạn 90 ngày và lịch dọn ảnh. Không thu chat, IP hay tên tệp gốc vào kho ảnh.
+Ảnh đóng góp lưu trực tiếp, mã hóa trong cơ sở dữ liệu của website; không cần kết nối Google Drive hoặc cấu hình khóa lưu trữ. Bảng thông tin tự mở khi vào hoặc tải lại trang. Chỉ ảnh mới sau khi người dùng chủ động đồng ý và xác nhận ảnh của mình mới được lưu. Từ chối vẫn nhận diện và chat bình thường.
 
-Bảng thông tin tự mở mỗi lần vào hoặc tải lại trang, kể cả lúc chưa kết nối Drive. Đóng bảng hoặc tải lại không tự đồng ý và không thay đổi trạng thái đã lưu. Khi thu ảnh chưa bật, nút đồng ý vẫn bị vô hiệu hóa.
+Admin đăng nhập rồi chọn **Kho ảnh đóng góp** trên thanh đầu trang để xem ảnh lớn, tải từng JPEG, tải ZIP của một trang kèm metadata, hoặc xóa ảnh đã chọn. Người thường không được xem kho. Tải ảnh yêu cầu cả cookie phiên và token admin; chỉ cookie không đủ. Đăng xuất đóng kho và thu hồi các URL xem trước.
 
-Chủ web thiết lập theo [hướng dẫn Google Drive](google-drive/HUONG_DAN.md). Chạy `setupCollection` sẽ tự tạo thư mục riêng tư; không cần tạo thư mục trước. Chưa kết nối và chạy thử Drive thật thì không được coi là đã hoàn tất xác minh lưu/xóa thực tế. Kiểm thử tự động dùng Drive và ảnh giả lập. Không bật thu ảnh cho người dùng thật trước khi kiểm tra lưu, rút lại và lịch dọn bằng ảnh tổng hợp.
+Kho có giới hạn 100 MiB dữ liệu ảnh đã mã hóa và tối đa 500 ảnh, mỗi trang 24 ảnh. Kho đầy không chặn ảnh dùng cho nhận diện; bản đóng góp báo chưa lưu để thử lại sau khi admin giải phóng dung lượng. Ảnh lưu tối đa 90 ngày, được dọn hằng giờ và khi admin mở kho. Đây là giới hạn ứng dụng, không phải cam kết dung lượng của gói Cloudflare.
 
-Phải áp dụng migration `0002_image_consent.sql` trước khi triển khai Worker mới. Chỉ admin được lưu kết nối; mã kết nối mã hóa trong D1, không trả về state. Các lượt đồng ý giữ kết nối gốc để vẫn xóa được khi tắt thu ảnh. Frontend Cloudflare có mã riêng tại `public/`; script xuất từ Python giữ các tài nguyên này để không ghi đè luồng đồng ý.
+Người gửi được cấp mã rút lại/xóa, dùng được sau khi phiên duyệt hết hạn. Xóa ảnh trong kho không làm ảnh phiên nhận diện biến mất; admin không thể dùng thao tác thử lại để khôi phục ảnh đã xóa. Các bản đã tải về và bản sao lưu hạ tầng cần quản lý theo vòng đời riêng. Việc thu ảnh không tự huấn luyện mô hình.
+
+Áp dụng migration `0003_web_photo_library.sql` trước khi triển khai. Mặc định cho phép mời đóng góp nhưng không lưu nếu chưa có đồng ý. Admin có thể tắt nhận ảnh mới tại **Quản lý thu ảnh**. Thông tin đơn vị/liên hệ có thể chỉnh khi chưa có đồng ý hiệu lực. App PC và web Python local không tự thu ảnh. Frontend Cloudflare trong `public/` được giữ riêng khi chạy script xuất tài nguyên từ Python.
+
+Xem [hướng dẫn kho ảnh](PHOTO_LIBRARY.md) và [báo cáo kiểm thử](PHOTO_COLLECTION_TEST_REPORT.md).
 
 Bản web chạy bằng Cloudflare Workers, gọi Ultralytics để nhận diện và Gemini để tư vấn. Bản app PC và bản web local được giữ riêng.
 

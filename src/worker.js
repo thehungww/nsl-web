@@ -1,11 +1,11 @@
 import { UserError, randomHex, equal, encrypt, decrypt, passwordHash, endpoint } from './security.js';
 import { jpegInfo, parsePrediction, invalidate, imageContext, annotatedSvg } from './core.js';
 import { documents, reply } from './rag.js';
-import { collectionState, configureCollection, recordConsent, collectPhoto, withdrawCollection, cleanupCollection } from './collection.js';
+import { collectionState, configureCollection, recordConsent, collectPhoto, withdrawCollection, cleanupCollection, listCollection, collectionImage, deleteCollection } from './collection.js';
 
 const now = () => Math.floor(Date.now()/1000);
 const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
-const adminRoutes = new Set(['/api/add-remote-model','/api/delete-remote-model','/api/chat-settings','/api/delete-chat-key','/api/collection-settings']);
+const adminRoutes = new Set(['/api/add-remote-model','/api/delete-remote-model','/api/chat-settings','/api/delete-chat-key','/api/collection-settings','/api/collection-list','/api/collection-delete']);
 function response(body, type = 'application/json; charset=utf-8', status = 200, headers = {}) {
   return new Response(body,{status,headers:{'Content-Type':type,'Cache-Control':'no-store','X-Content-Type-Options':'nosniff','Referrer-Policy':'same-origin','Content-Security-Policy':CSP,...headers}});
 }
@@ -87,6 +87,8 @@ async function predict(env,record,photo,data,confidence,fetcher) {
 }
 async function mutate(path,body,env,session,request,fetcher) {
   if(adminRoutes.has(path)) requireAdmin(session,body);
+  if(path==='/api/collection-list') return {collection_library:await listCollection(env,body)};
+  if(path==='/api/collection-delete') return {collection_deletion:await deleteCollection(env,body)};
   if(path==='/api/collection-settings') {
     await configureCollection(env,body,fetcher);session.status=body.enabled?'Đã bật đóng góp ảnh tự nguyện.':'Đã tắt thu ảnh đóng góp.';return;
   }
@@ -99,7 +101,7 @@ async function mutate(path,body,env,session,request,fetcher) {
   if(path==='/api/collection-withdraw') {
     await rate(env,'withdraw:'+session.id,6);
     const result=await withdrawCollection(env,session,body,fetcher);
-    session.status='Đã rút lại đồng ý và xóa ảnh đóng góp trên Drive. Ảnh trong phiên nhận diện không bị thay đổi.';
+    session.status='Đã rút lại đồng ý và xóa ảnh trong kho đóng góp. Ảnh trong phiên nhận diện không bị thay đổi.';
     return {collection_withdrawal:result};
   }
   if(path==='/api/collection-retry') {
@@ -213,14 +215,14 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
   if(!env.DB) return json({error:'Chưa liên kết cơ sở dữ liệu Cloudflare. Chạy npm run setup.'},503);
   let current,cookie='',session;
   try {
-    if(request.method==='GET' && ['/style.css','/app.js','/collection.js'].includes(path)) return env.ASSETS.fetch(request);
+    if(request.method==='GET' && ['/style.css','/app.js','/collection.js','/library.js'].includes(path)) return env.ASSETS.fetch(request);
     if(request.method==='GET' && path==='/document') {
       const file=url.searchParams.get('file');if(!documents.some(d=>d.file===file)) throw new UserError('Không tìm thấy tài liệu.',404);
       const pdf=await env.ASSETS.fetch(new Request(url.origin+'/pdf/'+encodeURIComponent(file)));
       return new Response(pdf.body,{status:pdf.status,headers:{'Content-Type':'application/pdf','X-Content-Type-Options':'nosniff','Content-Security-Policy':"frame-ancestors 'self'",'Cache-Control':'public, max-age=3600'}});
     }
     if(request.method==='GET' && path==='/api/documents') return json({documents});
-    if(request.method==='GET' && !['/','/api/state','/photo'].includes(path)) throw new UserError('Không tìm thấy trang.',404);
+    if(request.method==='GET' && !['/','/api/state','/photo','/api/collection-image'].includes(path)) throw new UserError('Không tìm thấy trang.',404);
     if(!['GET','POST'].includes(request.method)) throw new UserError('Phương thức không hỗ trợ.',405);
     current=await sessionFor(request,env,path==='/' && request.method==='GET');session=current.session;cookie=current.cookie;
     const headers=cookie?{'Set-Cookie':cookie}:{};
@@ -229,6 +231,10 @@ export async function handle(request,env,ctx,fetcher=globalThis.fetch.bind(globa
       return response((await html.text()).replace('__TOKEN__',session.csrf),'text/html; charset=utf-8',200,headers);
     }
     if(request.method==='GET' && path==='/api/state') return json(await publicState(env,session,current.locked),200,headers);
+    if(request.method==='GET' && path==='/api/collection-image') {
+      requireAdmin(session,{admin_token:request.headers.get('X-Admin-Token')});
+      return response(await collectionImage(env,url.searchParams.get('id')),'image/jpeg');
+    }
     if(request.method==='GET' && path==='/photo') {
       const photo=session.photos.find(p=>p.id===url.searchParams.get('id'));if(!photo) throw new UserError('Ảnh không thuộc phiên này.',404);
       const row=await env.DB.prepare('SELECT data FROM photos WHERE id=? AND session_id=?').bind(photo.id,session.id).first();if(!row) throw new UserError('Ảnh đã hết hạn.',404);
