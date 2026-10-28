@@ -3,7 +3,7 @@
  * Never copy images from this folder to a training dataset without retaining
  * receipt/expiry identifiers and honoring withdrawals. */
 var COLLECTION_PROTOCOL = 'acne-drive-v1';
-var COLLECTION_POLICY = '2026-10-27-v1';
+var COLLECTION_POLICY = '2026-10-28-v2';
 var COLLECTION_DAYS = 90;
 
 function setupCollection() {
@@ -59,12 +59,12 @@ function doPost(e) {
     }
     if(body.action!=='upload' || !/^[a-f0-9]{24}$/.test(body.id || ''))return json_({ok:false});
     var c=body.consent;
-    if(!c || c.version!==COLLECTION_POLICY || c.adult!==true || c.self_image!==true || !Number.isInteger(c.accepted_at) || !Number.isInteger(c.expires_at) || c.accepted_at>time+300 || c.expires_at-c.accepted_at!==COLLECTION_DAYS*86400 || c.expires_at<=time)return json_({ok:false});
+    if(!c || c.version!==COLLECTION_POLICY || c.self_image!==true || !Number.isInteger(c.accepted_at) || !Number.isInteger(c.expires_at) || c.accepted_at>time+300 || c.expires_at-c.accepted_at!==COLLECTION_DAYS*86400 || c.expires_at<=time)return json_({ok:false});
     if(typeof body.data!=='string' || body.data.length>1200000 || !/^[A-Za-z0-9+/]+={0,2}$/.test(body.data))return json_({ok:false});
     if(metadata && (metadata.revoked || metadata.expires!==c.expires_at || metadata.created!==c.accepted_at))return json_({ok:false});
     if(!folder) {
       folder=root.createFolder(body.receipt_hash);
-      metadata={created:c.accepted_at,expires:c.expires_at,policy:c.version,adult:true,self_image:true,revoked:false};
+      metadata={created:c.accepted_at,expires:c.expires_at,policy:c.version,self_image:true,revoked:false};
       folder.setDescription(JSON.stringify(metadata));
     }
     if(folder.getSharingAccess()!==DriveApp.Access.PRIVATE || folder.getEditors().length || folder.getViewers().length)return json_({ok:false});

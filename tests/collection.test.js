@@ -6,7 +6,7 @@ import { environment,browser,admin,jpeg,base } from './fixtures.mjs';
 import { POLICY_VERSION,receiptHash,driveCall,photoWithoutMetadata,cleanupCollection } from '../src/collection.js';
 
 const settings={enabled:true,url:'https://script.google.com/macros/s/test-deployment/exec',secret:'test-only-secret-'.repeat(4),controller:'Nhóm nghiên cứu thử nghiệm',contact:'test@example.invalid'};
-const choice={accepted:true,adult:true,self_image:true,policy_version:POLICY_VERSION};
+const choice={accepted:true,self_image:true,policy_version:POLICY_VERSION};
 function drive(calls=[],options={}) {
   return async(url,request)=>{
     const body=JSON.parse(request.body);calls.push({url,body,request});
@@ -39,9 +39,9 @@ test('declining keeps recognition available and sends no photographs to configur
   assert.equal((await guest.json('/api/collection-consent',{accepted:false})).status,200);
   assert.equal((await guest.json('/api/photo',{data:jpeg})).status,200);assert.equal(calls.length,0);
 });
-test('explicit adult, own-image, boolean and current policy consent are all required',async()=>{
+test('own-image, boolean and current policy consent are required without an age field',async()=>{
   const {env,guest}=await ready();
-  for(const invalid of [{...choice,adult:false},{...choice,self_image:false},{...choice,policy_version:'old'},{...choice,accepted:'true'}])assert.equal((await guest.json('/api/collection-consent',invalid)).status,400);
+  for(const invalid of [{...choice,self_image:false},{...choice,policy_version:'old'},{...choice,accepted:'true'}])assert.equal((await guest.json('/api/collection-consent',invalid)).status,400);
   assert.equal(env.DB.raw.prepare('SELECT COUNT(*) n FROM collection_consents').get().n,0);
 });
 test('only photos added after consent are donated; receipt returned once, not in stored/public state',async()=>{
@@ -137,7 +137,7 @@ function scriptFixture() {
 }
 test('actual Apps Script rejects unauthenticated input, duplicates no files, permanently deletes and blocks late upload',()=>{
   const {call,root}=scriptFixture(),created=Math.floor(Date.now()/1000),receipt_hash='a'.repeat(64),id='b'.repeat(24);
-  const upload={action:'upload',receipt_hash,id,data:jpeg,consent:{version:POLICY_VERSION,adult:true,self_image:true,accepted_at:created,expires_at:created+90*86400}};
+  const upload={action:'upload',receipt_hash,id,data:jpeg,consent:{version:POLICY_VERSION,self_image:true,accepted_at:created,expires_at:created+90*86400}};
   assert.equal(call({...upload,secret:'wrong'}).ok,false);assert.equal(root.record.children.length,0);
   assert.equal(call(upload).ok,true);assert.equal(call(upload).ok,true);assert.equal(root.record.children[0].record.files.length,1);
   assert.equal(call({action:'withdraw',receipt_hash,expires_at:upload.consent.expires_at}).erased,true);

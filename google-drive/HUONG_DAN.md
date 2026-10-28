@@ -27,7 +27,7 @@ Máy chủ kiểm tra kết nối, chế độ riêng tư và lịch dọn ảnh
 ## 3. Những gì hệ thống làm
 
 - Bảng thông tin tự xuất hiện mỗi lần mở hoặc tải lại trang, kể cả khi chưa kết nối Drive. Các ô xác nhận không tích sẵn. Đóng bảng không thay đổi lựa chọn đã lưu; người chưa đồng ý hoặc đã từ chối vẫn dùng web và không đóng góp. Mở bảng không tự bật thu ảnh; nút đồng ý chỉ khả dụng sau khi admin bật kết nối hợp lệ.
-- Chỉ nhận sau xác nhận chủ động rằng người gửi từ 18 tuổi và ảnh của chính mình. Đây là tự xác nhận, không phải kiểm định tuổi hoặc danh tính.
+- Chỉ nhận sau xác nhận chủ động rằng ảnh là của chính người gửi và đồng ý sử dụng ảnh theo thông tin đã hiển thị. Đây là tự xác nhận về quyền sử dụng ảnh, không phải kiểm định danh tính.
 - Chỉ ảnh thêm sau đồng ý được gửi; ảnh cũ không bị thu ngược. Trình duyệt chuyển ảnh sang JPEG; máy chủ bỏ các khối metadata APP/COM thông thường trước khi đóng góp. Khuôn mặt vẫn có thể nhận diện được, nên không gọi đây là ảnh ẩn danh.
 - Drive lưu JPEG dưới tên ngẫu nhiên, kèm thông tin đồng ý và hạn sử dụng. Không lưu đoạn chat, tên tệp gốc, địa chỉ IP hay tên người dùng trong kho ảnh đóng góp.
 - Ảnh gốc trong phiên nhận diện vẫn giữ cơ chế hết hạn riêng. Bỏ ảnh khỏi phiên không thay thế yêu cầu xóa bản đóng góp; dùng mã xóa để rút lại.

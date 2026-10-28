@@ -1,4 +1,4 @@
-# Kiểm thử đóng góp ảnh tự nguyện — 27/10/2026
+# Kiểm thử đóng góp ảnh tự nguyện — 28/10/2026
 
 ## Kết quả đã xác nhận
 
@@ -13,7 +13,7 @@
 |---|---|
 | Chưa cấu hình, chưa đồng ý hoặc đã từ chối | Không gọi Drive khi thêm ảnh; chức năng nhận diện vẫn nhận ảnh |
 | Người thường hoặc thiếu token admin thay kết nối | Từ chối 403 |
-| Thiếu xác nhận tuổi/quyền ảnh/chính sách hiện tại | Không tạo đồng ý |
+| Thiếu xác nhận quyền ảnh/chính sách hiện tại | Không tạo đồng ý |
 | Ảnh được thêm trước đồng ý | Không thu ngược, không cho retry để vượt điều kiện |
 | Ảnh thêm sau đồng ý | Có bản ghi thời gian, chính sách, hạn 90 ngày và tên ngẫu nhiên |
 | Metadata EXIF/APP thông thường | Loại khỏi bản đóng góp; không gửi tên gốc/chat |

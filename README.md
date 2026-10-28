@@ -2,7 +2,7 @@
 
 ## Ảnh đóng góp tự nguyện
 
-Web có bảng xin phép riêng cho việc lưu ảnh phục vụ đánh giá/gán nhãn/huấn luyện mô hình. Mặc định tắt; từ chối vẫn sử dụng được nhận diện và chatbot. Chỉ ảnh thêm sau đồng ý mới được gửi. Có mã rút lại/xóa, giới hạn tự xác nhận từ 18 tuổi, thời hạn 90 ngày và lịch dọn ảnh. Không thu chat, IP hay tên tệp gốc vào kho ảnh.
+Web có bảng xin phép riêng cho việc lưu ảnh phục vụ đánh giá/gán nhãn/huấn luyện mô hình. Mặc định tắt; từ chối vẫn sử dụng được nhận diện và chatbot. Chỉ ảnh thêm sau đồng ý mới được gửi. Có mã rút lại/xóa, thời hạn 90 ngày và lịch dọn ảnh. Không thu chat, IP hay tên tệp gốc vào kho ảnh.
 
 Bảng thông tin tự mở mỗi lần vào hoặc tải lại trang, kể cả lúc chưa kết nối Drive. Đóng bảng hoặc tải lại không tự đồng ý và không thay đổi trạng thái đã lưu. Khi thu ảnh chưa bật, nút đồng ý vẫn bị vô hiệu hóa.
 

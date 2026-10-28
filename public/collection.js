@@ -11,14 +11,14 @@
     $('collection-controller').textContent=c.controller || 'Chưa có thông tin đơn vị quản lý';
     $('collection-contact').textContent=c.contact || 'Chưa cấu hình liên hệ';
     $('collection-availability').textContent=!c.available?'Thu ảnh đóng góp hiện chưa bật. Bạn vẫn dùng web bình thường.':c.accepted?'Bạn đã đồng ý. Chỉ ảnh thêm sau lúc đồng ý mới được gửi.':c.revoked?'Đã dừng đóng góp. Bạn có thể gửi lại yêu cầu xóa bằng mã nếu lần trước chưa hoàn tất.':'Hoàn toàn tự nguyện. Từ chối không ảnh hưởng chức năng nhận diện và chatbot.';
-    $('collection-accept').disabled=working || !c.available || c.accepted || !$('collection-adult').checked || !$('collection-own').checked || !$('collection-agree').checked;
+    $('collection-accept').disabled=working || !c.available || c.accepted || !$('collection-own').checked || !$('collection-agree').checked;
     $('collection-decline').disabled=working;
     $('collection-withdraw').disabled=working;
     $('collection-code').value=$('collection-code').value || savedCodes().at(-1) || '';
   }
   function show() {
     prompted=true;
-    $('collection-adult').checked=false;$('collection-own').checked=false;$('collection-agree').checked=false;
+    $('collection-own').checked=false;$('collection-agree').checked=false;
     $('collection-feedback').textContent='';populate();
     if(!$('collection-dialog').open)$('collection-dialog').showModal();
   }
@@ -56,9 +56,9 @@
   }
   $('collection-button').onclick=show;
   $('close-collection').onclick=()=>$('collection-dialog').close();
-  for(const id of ['collection-adult','collection-own','collection-agree'])$(id).onchange=populate;
+  for(const id of ['collection-own','collection-agree'])$(id).onchange=populate;
   $('collection-accept').onclick=async()=>{
-    const result=await perform('/api/collection-consent',{accepted:true,adult:$('collection-adult').checked,self_image:$('collection-own').checked,policy_version:state.collection.policy_version},'collection-feedback');
+    const result=await perform('/api/collection-consent',{accepted:true,self_image:$('collection-own').checked,policy_version:state.collection.policy_version},'collection-feedback');
     if(result)$('collection-feedback').textContent='Đã đồng ý. Hãy lưu mã xóa ảnh bên dưới, rồi đóng bảng để tiếp tục. Ảnh đã thêm trước đó không được gửi.';
   };
   $('collection-decline').onclick=async()=>{

@@ -1,7 +1,7 @@
 import { UserError, encrypt, decrypt, randomHex, bytesToBase64 } from './security.js';
 import { jpegInfo } from './core.js';
 
-export const POLICY_VERSION = '2026-10-27-v1';
+export const POLICY_VERSION = '2026-10-28-v2';
 export const RETENTION_DAYS = 90;
 const stamp = () => Math.floor(Date.now()/1000);
 const encoder = new TextEncoder();
@@ -92,7 +92,7 @@ export async function recordConsent(env,session,body) {
   if(!body.accepted) {session.collection={...session.collection,decision:'declined'};return null;}
   const sink=await config(env);
   if(!sink?.enabled) throw new UserError('Thu ảnh đóng góp chưa được bật.',409);
-  if(body.policy_version!==POLICY_VERSION || body.adult!==true || body.self_image!==true) throw new UserError('Chỉ nhận khi bạn xác nhận từ 18 tuổi, ảnh của chính mình và đồng ý nội dung hiện tại.');
+  if(body.policy_version!==POLICY_VERSION || body.self_image!==true) throw new UserError('Cần xác nhận ảnh của chính mình và đồng ý nội dung hiện tại.');
   if((await collectionState(env,session)).accepted) throw new UserError('Phiên này đã đồng ý đóng góp.');
   const code=randomHex(),hash=await receiptHash(code),created=stamp(),expires=created+RETENTION_DAYS*86400;
   await env.DB.prepare('INSERT INTO collection_consents(receipt_hash,policy_version,created,expires,sink) VALUES(?,?,?,?,?)').bind(hash,POLICY_VERSION,created,expires,await encrypt(JSON.stringify(sink),env.APP_SECRET)).run();
@@ -114,7 +114,7 @@ export async function collectPhoto(env,session,photo,data,fetcher) {
   try {
     jpegInfo(data);
     const result=await driveCall(JSON.parse(await decrypt(consent.sink,env.APP_SECRET)),'upload',{
-      receipt_hash:hash,id:item.id,data:photoWithoutMetadata(data),consent:{version:POLICY_VERSION,accepted_at:consent.created,expires_at:consent.expires,adult:true,self_image:true}
+      receipt_hash:hash,id:item.id,data:photoWithoutMetadata(data),consent:{version:POLICY_VERSION,accepted_at:consent.created,expires_at:consent.expires,self_image:true}
     },fetcher);
     if(result.id!==item.id) throw new Error('id');
     photo.collection_status='sent';

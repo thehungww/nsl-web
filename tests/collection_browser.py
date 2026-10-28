@@ -41,7 +41,7 @@ with sync_playwright() as p:
     guest_context=browser.new_context(base_url='http://127.0.0.1:8788',viewport={'width':1366,'height':768},reduced_motion='reduce',accept_downloads=True)
     guest=guest_context.new_page();guest.on('pageerror',lambda e:errors.append(str(e)));guest.goto('/')
     expect(guest.locator('#collection-dialog')).to_be_visible();passed('New visitor sees voluntary notice on entry')
-    for checkbox in ['#collection-adult','#collection-own','#collection-agree']:
+    for checkbox in ['#collection-own','#collection-agree']:
         expect(guest.locator(checkbox)).not_to_be_checked()
     expect(guest.locator('#collection-accept')).to_be_disabled();passed('No prechecked agreement and no accepting without confirmations')
     screenshots=root/'runtime';guest.screenshot(path=str(screenshots/'collection-consent-desktop.png'),full_page=True)
@@ -53,7 +53,7 @@ with sync_playwright() as p:
     assert guest_context.request.get('/api/state').json()['collection']['accepted'] is False
     guest.locator('#close-collection').click();passed('Reload shows notice without resetting the declined consent')
     guest.locator('#collection-button').click()
-    for checkbox in ['#collection-adult','#collection-own','#collection-agree']:guest.locator(checkbox).check()
+    for checkbox in ['#collection-own','#collection-agree']:guest.locator(checkbox).check()
     guest.locator('#collection-accept').click();expect(guest.locator('#collection-receipt-panel')).to_be_visible()
     code=guest.locator('#collection-receipt').inner_text();assert len(code)==48
     with guest.expect_download() as info:guest.locator('#collection-download-code').click()
